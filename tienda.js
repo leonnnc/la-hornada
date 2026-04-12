@@ -255,9 +255,10 @@ function bumpBadge() {
 }
 
 /* ── EMAILJS CONFIG ── */
-const EMAILJS_SERVICE  = 'service_lahornada';
-const EMAILJS_TEMPLATE = 'template_pedido';
-const EMAILJS_KEY      = 'TU_PUBLIC_KEY'; // ← reemplazar con tu Public Key de EmailJS
+// Ya no se usa — reemplazado por WhatsApp
+
+/* ── WHATSAPP CONFIG ── */
+const WA_NUMBER = '51975524363'; // número con código de país Perú
 
 /* ── CHECKOUT STATE ── */
 let pendingCart     = {};
@@ -277,7 +278,6 @@ window.placeOrder = async function() {
     console.error('Error al descontar stock:', e);
   }
 
-  // Guardar pedido pendiente y abrir checkout
   pendingCart     = { ...cart };
   pendingPreorder = { ...preorder };
   pendingTotal    = parseFloat(document.getElementById('totalAmt').textContent.replace('S/ ', '')) || 0;
@@ -287,17 +287,14 @@ window.placeOrder = async function() {
   updateCartUI();
   window.closeCart();
 
-  // Mostrar monto en Yape
   document.getElementById('yapeAmount').textContent = `Total a yapear: S/ ${pendingTotal.toFixed(2)}`;
-
-  // Mostrar paso 1
   showCheckoutStep('payment');
   document.getElementById('checkoutOverlay').classList.add('open');
 
   if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar Pedido'; }
 };
 
-/* ── CHECKOUT: navegación entre pasos ── */
+/* ── CHECKOUT: navegación ── */
 function showCheckoutStep(step) {
   ['payment','yape','contra','success'].forEach(s => {
     document.getElementById(`step-${s}`).style.display = 'none';
@@ -313,7 +310,7 @@ window.backToPayment = function() {
   showCheckoutStep('payment');
 };
 
-/* ── CHECKOUT: enviar pedido ── */
+/* ── CHECKOUT: enviar pedido por WhatsApp ── */
 window.submitOrder = async function(method) {
   let nombre, telefono, direccion, yapeDe;
 
@@ -335,57 +332,68 @@ window.submitOrder = async function(method) {
     }
   }
 
-  const btn = document.querySelector('.btn-confirm-order:not([style*="none"])');
-  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+  const btn = document.querySelector(`#step-${method === 'yape' ? 'yape' : 'contra'} .btn-confirm-order`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Abriendo WhatsApp...'; }
 
-  // Armar resumen del pedido
-  const itemsHoy = Object.keys(pendingCart).map(id => {
+  // Armar líneas del pedido
+  const lineasHoy = Object.keys(pendingCart).map(id => {
     const p = products.find(x => x.id == id);
-    return `• ${p.name} x${pendingCart[id]} = S/ ${(p.price * pendingCart[id]).toFixed(2)}`;
-  }).join('\n');
+    return `  • ${p.name} x${pendingCart[id]} → S/ ${(p.price * pendingCart[id]).toFixed(2)}`;
+  });
 
-  const itemsMañana = Object.keys(pendingPreorder).map(id => {
+  const lineasMañana = Object.keys(pendingPreorder).map(id => {
     const p = products.find(x => x.id == id);
-    return `• ${p.name} x${pendingPreorder[id]} (para mañana)`;
-  }).join('\n');
+    return `  • ${p.name} x${pendingPreorder[id]} *(para mañana)*`;
+  });
 
-  const resumen = [itemsHoy, itemsMañana].filter(Boolean).join('\n');
-  const fecha   = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+  const fecha = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
 
-  // Guardar pedido en Firestore
+  // Construir mensaje WhatsApp
+  let msg = `🍞 *NUEVO PEDIDO — La Hornada*\n`;
+  msg += `📅 ${fecha}\n\n`;
+  msg += `👤 *Cliente:* ${nombre}\n`;
+  msg += `📞 *Teléfono:* ${telefono}\n`;
+
+  if (method === 'yape') {
+    msg += `💳 *Pago:* Yape desde ${yapeDe}\n`;
+  } else {
+    msg += `💵 *Pago:* Contraentrega\n`;
+    msg += `📍 *Dirección:* ${direccion}\n`;
+  }
+
+  msg += `\n🛒 *Productos:*\n`;
+  if (lineasHoy.length)    msg += lineasHoy.join('\n') + '\n';
+  if (lineasMañana.length) msg += lineasMañana.join('\n') + '\n';
+  msg += `\n💰 *TOTAL: S/ ${pendingTotal.toFixed(2)}*`;
+
+  if (method === 'yape') {
+    msg += `\n\n📲 *Yape al:* 975 524 363`;
+  }
+
+  // Guardar en Firestore
   try {
     await fsSaveOrder({
       nombre, telefono,
       direccion: direccion || '—',
       metodoPago: method,
       yapeDe: yapeDe || '—',
-      items: resumen,
+      items: [...lineasHoy, ...lineasMañana].join('\n'),
       total: pendingTotal,
       fecha,
       estado: method === 'yape' ? 'pendiente_confirmacion' : 'pendiente_envio'
     });
   } catch(e) { console.error('Error guardando pedido:', e); }
 
-  // Enviar email via EmailJS
-  try {
-    await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
-      to_email:    'yape975524363@gmail.com',
-      cliente:     nombre,
-      telefono,
-      direccion:   direccion || '—',
-      metodo_pago: method === 'yape' ? `Yape desde ${yapeDe}` : 'Contraentrega',
-      items:       resumen,
-      total:       `S/ ${pendingTotal.toFixed(2)}`,
-      fecha
-    }, EMAILJS_KEY);
-  } catch(e) { console.error('Error enviando email:', e); }
+  // Abrir WhatsApp
+  const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, '_blank');
 
   // Mostrar éxito
-  const msg = method === 'yape'
-    ? `¡Gracias ${nombre}! Recibimos tu pedido. Verificaremos tu Yape y te contactamos al ${telefono} para coordinar la entrega. 🎉`
-    : `¡Gracias ${nombre}! Recibimos tu pedido. Te contactamos al ${telefono} para coordinar la entrega en ${direccion}. 🎉`;
+  const successText = method === 'yape'
+    ? `¡Gracias ${nombre}! Se abrió WhatsApp con tu pedido. Recuerda yapear S/ ${pendingTotal.toFixed(2)} al 975 524 363 para confirmar tu envío. 🎉`
+    : `¡Gracias ${nombre}! Se abrió WhatsApp con tu pedido. Te contactaremos al ${telefono} para coordinar la entrega. 🎉`;
 
-  document.getElementById('successMsg').textContent = msg;
+  document.getElementById('successMsg').textContent = successText;
   showCheckoutStep('success');
 
   if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar pedido'; }
@@ -399,11 +407,6 @@ window.closeCheckout = function() {
 
 /* ── INIT ── */
 async function init() {
-  // Inicializar EmailJS
-  if (typeof emailjs !== 'undefined') {
-    emailjs.init(EMAILJS_KEY);
-  }
-
   applyStoreSettings();
 
   // Mostrar loading
