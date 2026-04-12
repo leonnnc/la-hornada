@@ -103,6 +103,9 @@
   <div class="modal-overlay" id="checkoutOverlay">
     <div class="modal checkout-modal">
 
+      <!-- Botón X para cerrar siempre visible -->
+      <button class="checkout-close-btn" onclick="closeCheckout()">✕</button>
+
       <!-- PASO 1: método de pago -->
       <div id="step-payment">
         <div class="modal-icon">🧾</div>
@@ -110,14 +113,14 @@
         <p style="margin-top:8px;color:var(--text-muted);font-size:0.9rem">Elige tu método de pago</p>
         <div class="pay-options">
           <button class="pay-opt" onclick="selectPayment('yape')">
-            <span class="pay-icon">📱</span>
+            <img src="img/yape-qr.jpeg" alt="Yape" class="pay-opt-img">
             <span class="pay-label">Yape</span>
             <span class="pay-desc">Pago digital al instante</span>
           </button>
           <button class="pay-opt" onclick="selectPayment('contraentrega')">
             <span class="pay-icon">💵</span>
-            <span class="pay-label">Contraentrega</span>
-            <span class="pay-desc">Pagas al recibir</span>
+            <span class="pay-label">Efectivo</span>
+            <span class="pay-desc">Pagas al recibir tu pedido</span>
           </button>
         </div>
       </div>
@@ -155,10 +158,10 @@
         </div>
       </div>
 
-      <!-- PASO 2b: Contraentrega -->
+      <!-- PASO 2b: Efectivo -->
       <div id="step-contra" style="display:none">
-        <div class="modal-icon">🚚</div>
-        <h3>Pago contraentrega</h3>
+        <div class="modal-icon">💵</div>
+        <h3>Pago en efectivo</h3>
         <p style="margin-top:6px;color:var(--text-muted);font-size:0.88rem">Pagas en efectivo al recibir tu pedido</p>
         <div class="checkout-form">
           <div class="cf-row">

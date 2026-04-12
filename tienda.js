@@ -357,7 +357,7 @@ window.submitOrder = async function(method) {
   if (method === 'yape') {
     msg += `💳 *Pago:* Yape desde ${yapeDe}\n`;
   } else {
-    msg += `💵 *Pago:* Contraentrega\n`;
+    msg += `💵 *Pago:* Efectivo (contraentrega)\n`;
     msg += `📍 *Dirección:* ${direccion}\n`;
   }
 
