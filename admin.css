@@ -583,7 +583,7 @@ body {
 .order-card-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-top: 10px;
   flex-wrap: wrap;
   gap: 10px;
@@ -626,6 +626,35 @@ body {
 }
 
 .status-select:focus { border-color: var(--gold); }
+
+/* ── STATUS BUTTONS ── */
+.status-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.status-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.status-btn:hover { border-color: var(--gold); color: var(--text); }
+
+.status-btn.active-pending  { background: rgba(228,168,75,0.15);  border-color: var(--gold);   color: var(--gold);   font-weight: 700; }
+.status-btn.active-paid     { background: rgba(46,204,113,0.15);  border-color: var(--green);  color: var(--green);  font-weight: 700; }
+.status-btn.active-shipping { background: rgba(79,110,247,0.15);  border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.status-btn.active-done     { background: rgba(46,204,113,0.12);  border-color: var(--green);  color: var(--green);  font-weight: 700; opacity: 0.8; }
 
 /* ── STOCK EN TABLA ── */
 .stock-cell {

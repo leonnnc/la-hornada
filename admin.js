@@ -633,13 +633,16 @@ function orderCard(o) {
         <span class="order-total">S/ ${Number(o.total || 0).toFixed(2)}</span>
         <div class="order-status-group">
           <span class="order-status ${est.cls}">${est.label}</span>
-          <select class="status-select" onchange="changeOrderStatus('${o.id}', this.value)">
-            <option value="pendiente_confirmacion" ${o.estado==='pendiente_confirmacion'?'selected':''}>⏳ Pendiente Yape</option>
-            <option value="pagado"                 ${o.estado==='pagado'?'selected':''}>✅ Pago confirmado</option>
-            <option value="pendiente_envio"        ${o.estado==='pendiente_envio'?'selected':''}>📦 Listo para enviar</option>
-            <option value="en_camino"              ${o.estado==='en_camino'?'selected':''}>🛵 En camino</option>
-            <option value="entregado"              ${o.estado==='entregado'?'selected':''}>📦 Entregado</option>
-          </select>
+          <div class="status-btns">
+            <button class="status-btn ${o.estado==='pendiente_confirmacion'?'active-pending':''}"
+              onclick="changeOrderStatus('${o.id}','pendiente_confirmacion')">⏳ Pendiente Yape</button>
+            <button class="status-btn ${o.estado==='pagado'?'active-paid':''}"
+              onclick="changeOrderStatus('${o.id}','pagado')">✅ Pago confirmado</button>
+            <button class="status-btn ${o.estado==='pendiente_envio'||o.estado==='en_camino'?'active-shipping':''}"
+              onclick="changeOrderStatus('${o.id}','pendiente_envio')">🚚 Por enviar</button>
+            <button class="status-btn ${o.estado==='entregado'?'active-done':''}"
+              onclick="changeOrderStatus('${o.id}','entregado')">📦 Entregado</button>
+          </div>
         </div>
       </div>
     </div>`;
