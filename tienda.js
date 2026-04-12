@@ -419,7 +419,7 @@ window.openProductModal = function(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
 
-  const imgSrc  = resolveImg(p.img);
+  const imgSrc   = resolveImg(p.img);
   const sinStock = (p.stock ?? 99) === 0;
 
   // Imagen
@@ -430,53 +430,69 @@ window.openProductModal = function(id) {
   document.getElementById('pmEmoji').textContent = p.emoji;
   document.getElementById('pmEmoji').style.display = imgSrc ? 'none' : 'flex';
 
-  // Info
+  // Título, precio, desc
   document.getElementById('pmName').textContent  = p.name;
-  document.getElementById('pmPrice').textContent = `S/ ${Number(p.price).toFixed(2)} / unidad`;
+  document.getElementById('pmPrice').innerHTML   = `S/ ${Number(p.price).toFixed(2)} <span class="pm-price-unit">/ unidad</span>`;
   document.getElementById('pmDesc').textContent  = p.desc;
 
-  // Texto para redes sociales
-  const cfg = JSON.parse(localStorage.getItem('lahornada_settings') || '{}');
-  const storeName = cfg.name  || 'La Hornada';
-  const phone     = cfg.phone || '975 524 363';
-  const hours     = cfg.hours || 'Lun–Dom 8am–8pm';
-  const storeUrl  = window.location.href.replace('tienda.html','').replace(/\/$/, '') + '/tienda.html';
+  // Info cards
+  const cfg     = JSON.parse(localStorage.getItem('lahornada_settings') || '{}');
+  const phone   = cfg.phone || '975 524 363';
+  const hours   = cfg.hours || 'Lun–Dom 8am–8pm';
+  const storeName = cfg.name || 'La Hornada';
+  const storeUrl  = window.location.href.includes('tienda.html')
+    ? window.location.href
+    : window.location.origin + window.location.pathname + 'tienda.html';
 
+  document.getElementById('pmInfoRow').innerHTML = `
+    <div class="pm-info-card">
+      <div class="pm-info-icon">📞</div>
+      <div class="pm-info-label">WhatsApp</div>
+      <div class="pm-info-value">${phone}</div>
+    </div>
+    <div class="pm-info-card">
+      <div class="pm-info-icon">🕐</div>
+      <div class="pm-info-label">Horario</div>
+      <div class="pm-info-value">${hours}</div>
+    </div>`;
+
+  // Texto para redes
   const frases = [
-    `¿Se te antojó? 😍 ¡Nosotros lo preparamos con todo el amor!`,
+    `¡El sabor que te hace volver una y otra vez! 🔥`,
     `Hecho con ingredientes frescos y recetas de siempre. 🌾`,
-    `El sabor que te hace volver una y otra vez. 🔥`,
+    `¿Se te antojó? ¡Nosotros lo preparamos con todo el amor! 😍`,
     `Porque lo artesanal siempre sabe mejor. ❤️`,
+    `¡El favorito de nuestros clientes! No te lo pierdas. ⭐`,
   ];
   const frase = frases[p.id % frases.length];
+  const stockTxt = sinStock ? `⚠️ ¡Pide el tuyo para mañana!` : `✅ ¡Disponible ahora!`;
 
   const socialText =
-`🔥 ${p.emoji} ¡IMPERDIBLE! ${p.emoji} 🔥
-━━━━━━━━━━━━━━━━━━━━━
-*${p.name.toUpperCase()}*
-━━━━━━━━━━━━━━━━━━━━━
-
-${p.desc}
+`${p.emoji}${p.emoji}${p.emoji} ¡${p.name.toUpperCase()}! ${p.emoji}${p.emoji}${p.emoji}
 
 ${frase}
 
-💰 Solo *S/ ${Number(p.price).toFixed(2)}* por unidad
-🚚 Delivery GRATIS a domicilio 🎉
-⏰ ${hours}
+📝 ${p.desc}
 
 ━━━━━━━━━━━━━━━━━━━━━
-🛒 *¡HAGA SU PEDIDO AHORA!*
-👇 Ingresa aquí y elige lo que más te antoje:
+💰 Precio: S/ ${Number(p.price).toFixed(2)} por unidad
+🚚 Delivery GRATIS a domicilio
+${stockTxt}
+━━━━━━━━━━━━━━━━━━━━━
+
+🛒 ¡HACÉ TU PEDIDO AHORA!
+👇 Ingresa a nuestra tienda online:
 🌐 ${storeUrl}
 
-📲 También por WhatsApp:
+📲 O escríbenos por WhatsApp:
 📞 ${phone}
-━━━━━━━━━━━━━━━━━━━━━
+🕐 Atención: ${hours}
 
-🍞 *${storeName}* — Delicias artesanales
+━━━━━━━━━━━━━━━━━━━━━
+🍞 ${storeName} — Delicias artesanales
 ✨ Hechas con amor, entregadas con cariño ✨
 
-#${storeName.replace(/\s+/g,'')} #${p.name.replace(/\s+/g,'')} #DeliciasArtesanales #Delivery #PedidosOnline #ComidaPeruana #Antojo #HechoConAmor`;
+#${storeName.replace(/\s+/g,'')} #${p.name.replace(/\s+/g,'')} #DeliciasArtesanales #Delivery #PedidosOnline #HechoConAmor #Antojo`;
 
   document.getElementById('pmSocialText').textContent = socialText;
 
@@ -485,9 +501,9 @@ ${frase}
   if (sinStock) {
     addBtn.textContent = '📅 Pedir para mañana';
     addBtn.onclick = () => { addPreorder(id); closeProductModal(); };
-    addBtn.style.background = 'linear-gradient(135deg, var(--gold-dim), var(--gold))';
+    addBtn.style.background = 'linear-gradient(135deg, #C8862A, #E4A84B)';
   } else {
-    addBtn.textContent = '🛒 Agregar al carrito';
+    addBtn.textContent = '🛒 ¡Agregar al carrito!';
     addBtn.onclick = () => { addToCart(id); closeProductModal(); };
     addBtn.style.background = 'linear-gradient(135deg, var(--brown), var(--rust))';
   }

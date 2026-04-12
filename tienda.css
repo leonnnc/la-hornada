@@ -740,11 +740,11 @@ header {
 
 /* ── MODAL DETALLE PRODUCTO ── */
 .product-modal-box {
-  background: var(--card-bg);
+  background: #FFFDF8;
   border-radius: 24px;
   width: 100%;
-  max-width: 520px;
-  max-height: 92vh;
+  max-width: 480px;
+  max-height: 94vh;
   overflow-y: auto;
   position: relative;
   animation: popIn 0.3s cubic-bezier(0.4,0,0.2,1);
@@ -753,18 +753,20 @@ header {
 .product-modal-close {
   position: absolute;
   top: 14px; right: 14px;
-  background: rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.85);
   border: none; width: 34px; height: 34px;
   border-radius: 50%; font-size: 1rem;
   cursor: pointer; z-index: 10;
   display: flex; align-items: center; justify-content: center;
   color: var(--text-muted); transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .product-modal-close:hover { background: #fde8e8; color: var(--rust); }
 
+/* ── FLYER HEADER ── */
 .product-modal-img-wrap {
-  height: 260px;
+  height: 280px;
   position: relative;
   overflow: hidden;
   border-radius: 24px 24px 0 0;
@@ -783,50 +785,123 @@ header {
   background: var(--warm);
 }
 
-.product-modal-body { padding: 24px; }
-
-.product-modal-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem; font-weight: 700;
-  color: var(--brown); line-height: 1.2;
+/* Título sobre la imagen estilo flyer */
+.product-modal-img-wrap::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.55) 100%);
 }
 
-.product-modal-price {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem; font-weight: 700;
-  color: var(--gold); margin-top: 8px;
+.product-modal-title-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 2;
+  padding: 20px 24px 16px;
 }
 
-.product-modal-desc {
+.product-modal-title-overlay h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 900;
+  color: white; text-transform: uppercase;
+  line-height: 1.1; letter-spacing: -0.5px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.product-modal-title-overlay .pm-pedido-tag {
+  display: inline-block;
+  background: var(--gold);
+  color: white;
+  font-size: 0.78rem; font-weight: 700;
+  padding: 4px 12px; border-radius: 50px;
+  margin-bottom: 8px; letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ── FLYER BODY ── */
+.product-modal-body {
+  padding: 20px 24px 24px;
+}
+
+.pm-desc-block {
   font-size: 0.92rem; color: var(--text-muted);
-  line-height: 1.6; margin-top: 10px;
+  line-height: 1.6; margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--warm);
 }
+
+.pm-price-block {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  background: var(--warm);
+  border-radius: 14px; padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.pm-price-label {
+  font-size: 0.78rem; font-weight: 700;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pm-price-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; font-weight: 900;
+  color: var(--gold);
+}
+
+.pm-price-unit {
+  font-size: 0.75rem; color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif; font-weight: 400;
+}
+
+.pm-delivery-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; font-weight: 600;
+  color: #27ae60;
+}
+
+/* ── INFO FOOTER FLYER ── */
+.pm-info-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 16px;
+}
+
+.pm-info-card {
+  background: var(--warm);
+  border-radius: 12px; padding: 12px;
+  text-align: center;
+}
+
+.pm-info-icon { font-size: 1.4rem; margin-bottom: 4px; }
+.pm-info-label { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.pm-info-value { font-size: 0.8rem; color: var(--brown); font-weight: 600; margin-top: 2px; }
 
 /* ── SECCIÓN REDES ── */
 .social-section {
-  margin-top: 20px;
-  background: var(--warm);
+  margin-top: 4px;
+  background: #f0f7ff;
+  border: 1.5px solid #bfdbfe;
   border-radius: 14px;
   padding: 16px;
 }
 
 .social-label {
   font-size: 0.78rem; font-weight: 700;
-  color: var(--brown-mid); text-transform: uppercase;
+  color: #1d4ed8; text-transform: uppercase;
   letter-spacing: 0.5px; margin-bottom: 10px;
 }
 
 .social-text {
-  font-size: 0.82rem; color: var(--text);
+  font-size: 0.82rem; color: #1e293b;
   line-height: 1.6; white-space: pre-wrap;
   background: white; border-radius: 10px;
-  padding: 12px 14px; max-height: 180px;
-  overflow-y: auto; border: 1px solid var(--warm);
+  padding: 12px 14px; max-height: 160px;
+  overflow-y: auto; border: 1px solid #e2e8f0;
 }
 
 .btn-copy {
   margin-top: 10px; width: 100%;
-  background: var(--brown);
+  background: #1d4ed8;
   color: white; border: none;
   border-radius: 10px; padding: 10px;
   font-family: 'DM Sans', sans-serif;
@@ -834,18 +909,19 @@ header {
   cursor: pointer; transition: background 0.2s;
 }
 
-.btn-copy:hover { background: var(--rust); }
+.btn-copy:hover { background: #1e40af; }
 
 .product-modal-add {
   width: 100%; margin-top: 14px;
   background: linear-gradient(135deg, var(--brown), var(--rust));
   color: white; border: none; border-radius: 14px;
-  padding: 14px; font-family: 'DM Sans', sans-serif;
+  padding: 15px; font-family: 'DM Sans', sans-serif;
   font-size: 1rem; font-weight: 600;
-  cursor: pointer; transition: opacity 0.2s;
+  cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+  letter-spacing: 0.3px;
 }
 
-.product-modal-add:hover { opacity: 0.9; }
+.product-modal-add:hover { opacity: 0.9; transform: scale(1.01); }
 
 /* ── PANTALLA DE ESPERA ── */
 .waiting-anim {

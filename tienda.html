@@ -230,18 +230,37 @@
   <div class="modal-overlay" id="productModal" onclick="closeProductModal(event)">
     <div class="product-modal-box">
       <button class="product-modal-close" onclick="closeProductModal()">✕</button>
+
+      <!-- Imagen con título encima estilo flyer -->
       <div class="product-modal-img-wrap">
         <img id="pmImg" src="" alt="">
         <div class="product-modal-emoji" id="pmEmoji"></div>
+        <div class="product-modal-title-overlay">
+          <div class="pm-pedido-tag">🛒 ¡Haz tu pedido!</div>
+          <h2 id="pmName"></h2>
+        </div>
       </div>
+
       <div class="product-modal-body">
-        <div class="product-modal-name" id="pmName"></div>
-        <div class="product-modal-price" id="pmPrice"></div>
-        <div class="product-modal-desc" id="pmDesc"></div>
+
+        <!-- Descripción -->
+        <div class="pm-desc-block" id="pmDesc"></div>
+
+        <!-- Precio + delivery -->
+        <div class="pm-price-block">
+          <div>
+            <div class="pm-price-label">Precio por unidad</div>
+            <div class="pm-price-value" id="pmPrice"></div>
+          </div>
+          <div class="pm-delivery-badge">🚚 Delivery<br>GRATIS 🎉</div>
+        </div>
+
+        <!-- Info cards -->
+        <div class="pm-info-row" id="pmInfoRow"></div>
 
         <!-- Texto para redes -->
         <div class="social-section">
-          <div class="social-label">📲 Texto para redes sociales</div>
+          <div class="social-label">📲 Copiar para redes sociales</div>
           <div class="social-text" id="pmSocialText"></div>
           <button class="btn-copy" id="btnCopy" onclick="copySocialText()">
             📋 Copiar texto
