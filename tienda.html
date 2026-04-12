@@ -258,13 +258,16 @@
         <!-- Info cards -->
         <div class="pm-info-row" id="pmInfoRow"></div>
 
-        <!-- Texto para redes -->
-        <div class="social-section">
-          <div class="social-label">📲 Copiar para redes sociales</div>
-          <div class="social-text" id="pmSocialText"></div>
-          <button class="btn-copy" id="btnCopy" onclick="copySocialText()">
-            📋 Copiar texto
-          </button>
+        <!-- Flyer generado -->
+        <div class="flyer-section">
+          <div class="social-label">🖼️ Flyer para redes sociales</div>
+          <canvas id="flyerCanvas" style="display:none"></canvas>
+          <img id="flyerPreview" class="flyer-preview" alt="Flyer">
+          <div class="flyer-btns">
+            <button class="btn-download" onclick="downloadFlyer()">⬇️ Descargar imagen</button>
+            <button class="btn-copy" id="btnCopy" onclick="copySocialText()">📋 Copiar texto</button>
+          </div>
+          <div class="social-text" id="pmSocialText" style="margin-top:10px"></div>
         </div>
 
         <button class="product-modal-add" id="pmAddBtn">🛒 Agregar al carrito</button>

@@ -876,6 +876,36 @@ header {
 .pm-info-label { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .pm-info-value { font-size: 0.8rem; color: var(--brown); font-weight: 600; margin-top: 2px; }
 
+/* ── FLYER ── */
+.flyer-section {
+  margin-top: 4px;
+}
+
+.flyer-preview {
+  width: 100%;
+  border-radius: 14px;
+  display: block;
+  box-shadow: 0 4px 20px rgba(61,35,20,0.15);
+}
+
+.flyer-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-download {
+  background: linear-gradient(135deg, var(--brown), var(--rust));
+  color: white; border: none;
+  border-radius: 10px; padding: 11px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s;
+}
+
+.btn-download:hover { opacity: 0.9; }
+
 /* ── SECCIÓN REDES ── */
 .social-section {
   margin-top: 4px;

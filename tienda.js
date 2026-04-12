@@ -510,12 +510,222 @@ ${stockTxt}
 
   document.getElementById('productModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // Generar flyer
+  generateFlyer(p, cfg);
 };
 
 window.closeProductModal = function(e) {
   if (e && e.target !== document.getElementById('productModal') && !e.target.classList.contains('product-modal-close')) return;
   document.getElementById('productModal').classList.remove('open');
   document.body.style.overflow = '';
+};
+
+/* ── GENERAR FLYER CON CANVAS ── */
+function generateFlyer(p, cfg) {
+  const canvas  = document.getElementById('flyerCanvas');
+  const W = 1080, H = 1350;
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const storeName = cfg.name  || 'La Hornada';
+  const phone     = cfg.phone || '975 524 363';
+  const hours     = cfg.hours || 'Lun–Dom 8am–8pm';
+  const storeUrl  = window.location.href.includes('tienda.html')
+    ? window.location.href
+    : window.location.origin + window.location.pathname + 'tienda.html';
+
+  const drawContent = (productImg) => {
+    // ── FONDO ──
+    ctx.fillStyle = '#FAF6EF';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── IMAGEN DEL PRODUCTO (parte superior) ──
+    const imgH = 560;
+    if (productImg) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, imgH);
+      ctx.clip();
+      // Escalar para cubrir
+      const scale = Math.max(W / productImg.width, imgH / productImg.height);
+      const sw = productImg.width * scale;
+      const sh = productImg.height * scale;
+      ctx.drawImage(productImg, (W - sw) / 2, (imgH - sh) / 2, sw, sh);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#F5ECD7';
+      ctx.fillRect(0, 0, W, imgH);
+      ctx.font = '200px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.emoji, W / 2, imgH / 2 + 70);
+    }
+
+    // Gradiente sobre imagen
+    const grad = ctx.createLinearGradient(0, imgH - 200, 0, imgH);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(42,24,16,0.85)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, imgH - 200, W, 200);
+
+    // ── ONDA DECORATIVA ──
+    ctx.fillStyle = '#FAF6EF';
+    ctx.beginPath();
+    ctx.moveTo(0, imgH - 40);
+    ctx.quadraticCurveTo(W * 0.25, imgH + 60, W * 0.5, imgH - 20);
+    ctx.quadraticCurveTo(W * 0.75, imgH - 80, W, imgH - 10);
+    ctx.lineTo(W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // ── NOMBRE DEL PRODUCTO ──
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 88px serif';
+    ctx.textAlign = 'left';
+    const nameLines = wrapText(ctx, p.name.toUpperCase(), W - 80, 88);
+    nameLines.forEach((line, i) => {
+      ctx.fillText(line, 50, imgH - 120 + i * 95);
+    });
+
+    // ── TAG "¡HAZ TU PEDIDO!" ──
+    const tagY = imgH + 60;
+    ctx.fillStyle = '#C8862A';
+    roundRect(ctx, 50, tagY, 340, 56, 28);
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🛒  ¡HAZ TU PEDIDO!', 220, tagY + 37);
+
+    // ── DESCRIPCIÓN ──
+    ctx.fillStyle = '#7A5C4A';
+    ctx.font = '32px sans-serif';
+    ctx.textAlign = 'left';
+    const descLines = wrapText(ctx, p.desc, W - 100, 32);
+    descLines.slice(0, 3).forEach((line, i) => {
+      ctx.fillText(line, 50, tagY + 100 + i * 44);
+    });
+
+    // ── PRECIO ──
+    const priceY = tagY + 100 + Math.min(descLines.length, 3) * 44 + 40;
+    ctx.fillStyle = '#F5ECD7';
+    roundRect(ctx, 50, priceY, W - 100, 120, 20);
+    ctx.fill();
+
+    ctx.fillStyle = '#C8862A';
+    ctx.font = 'bold 72px serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`S/ ${Number(p.price).toFixed(2)}`, 80, priceY + 82);
+
+    ctx.fillStyle = '#7A5C4A';
+    ctx.font = '28px sans-serif';
+    ctx.fillText('por unidad', 80, priceY + 112);
+
+    ctx.fillStyle = '#27ae60';
+    ctx.font = 'bold 30px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('🚚 Delivery GRATIS 🎉', W - 80, priceY + 70);
+
+    // ── SEPARADOR ──
+    const sepY = priceY + 150;
+    ctx.strokeStyle = '#F5ECD7';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(50, sepY);
+    ctx.lineTo(W - 50, sepY);
+    ctx.stroke();
+
+    // ── INFO FOOTER ──
+    const footerY = sepY + 40;
+    const cols = [
+      { icon: '📞', label: 'WhatsApp', value: phone },
+      { icon: '🕐', label: 'Horario',  value: hours },
+      { icon: '🌐', label: 'Pedidos online', value: 'Ver tienda →' },
+      { icon: '🍞', label: 'Marca',    value: storeName },
+    ];
+
+    cols.forEach((col, i) => {
+      const x = 50 + (i % 2) * (W / 2);
+      const y = footerY + Math.floor(i / 2) * 130;
+      ctx.fillStyle = '#F5ECD7';
+      roundRect(ctx, x, y, W / 2 - 70, 110, 16);
+      ctx.fill();
+      ctx.font = '36px serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(col.icon, x + 20, y + 50);
+      ctx.fillStyle = '#7A5C4A';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText(col.label.toUpperCase(), x + 70, y + 38);
+      ctx.fillStyle = '#3D2314';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText(col.value, x + 70, y + 72);
+    });
+
+    // ── MARCA INFERIOR ──
+    ctx.fillStyle = '#3D2314';
+    ctx.fillRect(0, H - 80, W, 80);
+    ctx.fillStyle = '#E4A84B';
+    ctx.font = 'bold 36px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🍞 ${storeName} — Delicias Artesanales`, W / 2, H - 28);
+
+    // Mostrar preview
+    const preview = document.getElementById('flyerPreview');
+    preview.src = canvas.toDataURL('image/png');
+  };
+
+  // Cargar imagen del producto
+  if (p.img && !p.img.startsWith('img/')) {
+    const productImg = new Image();
+    productImg.crossOrigin = 'anonymous';
+    productImg.onload  = () => drawContent(productImg);
+    productImg.onerror = () => drawContent(null);
+    productImg.src = resolveImg(p.img);
+  } else {
+    drawContent(null);
+  }
+}
+
+// Helpers canvas
+function wrapText(ctx, text, maxWidth, fontSize) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  words.forEach(word => {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+window.downloadFlyer = function() {
+  const canvas = document.getElementById('flyerCanvas');
+  const link   = document.createElement('a');
+  link.download = `flyer-lahornada.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
 };
 
 window.copySocialText = function() {
