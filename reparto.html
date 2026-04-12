@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reparto — La Hornada</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="reparto.css">
+</head>
+<body>
+
+  <!-- LOGIN REPARTIDOR -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <div class="login-logo">🚚 La Hornada<span>Panel de Reparto</span></div>
+      <div class="login-title">Acceso Repartidor</div>
+      <div class="login-field">
+        <label>Usuario</label>
+        <input type="text" id="loginUser" placeholder="repartidor" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label>Contraseña</label>
+        <input type="password" id="loginPass" placeholder="••••••••"
+          autocomplete="current-password"
+          onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <button class="login-btn" onclick="doLogin()">Ingresar →</button>
+      <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+    </div>
+  </div>
+
+  <!-- PANEL REPARTIDOR -->
+  <div id="repartoUI" style="display:none">
+
+    <header class="reparto-header">
+      <div class="reparto-logo">🚚 Panel de Reparto</div>
+      <div class="header-right">
+        <span class="header-date" id="headerDate"></span>
+        <button class="btn-logout" onclick="doLogout()">Salir →</button>
+      </div>
+    </header>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('pendientes', this)">
+        📦 Por entregar
+        <span class="tab-badge" id="badgePendientes"></span>
+      </button>
+      <button class="tab" onclick="switchTab('entregados', this)">
+        ✅ Entregados hoy
+        <span class="tab-badge" id="badgeEntregados"></span>
+      </button>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="resumen-row" id="resumenRow"></div>
+
+    <!-- LISTA DE PEDIDOS -->
+    <div class="pedidos-list" id="pedidosList"></div>
+
+  </div>
+
+  <script src="products.js"></script>
+  <script type="module" src="reparto.js"></script>
+</body>
+</html>

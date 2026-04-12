@@ -123,7 +123,9 @@
             <div class="orders-filter-group">
               <button class="filter-btn active" onclick="filterOrders('all', this)">Todos</button>
               <button class="filter-btn" onclick="filterOrders('pendiente_confirmacion', this)">⏳ Pendiente Yape</button>
-              <button class="filter-btn" onclick="filterOrders('pendiente_envio', this)">🚚 Por enviar</button>
+              <button class="filter-btn" onclick="filterOrders('pagado', this)">✅ Pago confirmado</button>
+              <button class="filter-btn" onclick="filterOrders('pendiente_envio', this)">📦 Por enviar</button>
+              <button class="filter-btn" onclick="filterOrders('en_camino', this)">🛵 En camino</button>
               <button class="filter-btn" onclick="filterOrders('entregado', this)">✅ Entregados</button>
             </div>
             <input type="date" id="filterDate" class="date-filter" onchange="filterByDate(this.value)" title="Filtrar por fecha">

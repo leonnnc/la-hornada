@@ -636,7 +636,8 @@ function orderCard(o) {
           <select class="status-select" onchange="changeOrderStatus('${o.id}', this.value)">
             <option value="pendiente_confirmacion" ${o.estado==='pendiente_confirmacion'?'selected':''}>⏳ Pendiente Yape</option>
             <option value="pagado"                 ${o.estado==='pagado'?'selected':''}>✅ Pago confirmado</option>
-            <option value="pendiente_envio"        ${o.estado==='pendiente_envio'?'selected':''}>🚚 Por enviar</option>
+            <option value="pendiente_envio"        ${o.estado==='pendiente_envio'?'selected':''}>📦 Listo para enviar</option>
+            <option value="en_camino"              ${o.estado==='en_camino'?'selected':''}>🛵 En camino</option>
             <option value="entregado"              ${o.estado==='entregado'?'selected':''}>📦 Entregado</option>
           </select>
         </div>

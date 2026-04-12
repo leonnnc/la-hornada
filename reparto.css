@@ -1,0 +1,256 @@
+/* =============================================
+   LA HORNADA — Panel de Reparto CSS
+   ============================================= */
+
+:root {
+  --bg:        #0F1117;
+  --surface:   #1A1D27;
+  --surface2:  #22263A;
+  --border:    #2E3248;
+  --gold:      #E4A84B;
+  --gold-dim:  #C8862A;
+  --green:     #2ECC71;
+  --red:       #E74C3C;
+  --blue:      #4F6EF7;
+  --orange:    #F39C12;
+  --text:      #F0F2FF;
+  --text-muted:#7A82A8;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── LOGIN ── */
+.login-screen {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px 32px;
+  width: 100%; max-width: 380px;
+  text-align: center;
+}
+
+.login-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 900; color: var(--gold);
+}
+
+.login-logo span {
+  display: block; font-size: 0.8rem; font-weight: 400;
+  color: var(--text-muted); margin-top: 4px; letter-spacing: 2px;
+}
+
+.login-title { margin-top: 24px; font-size: 1rem; font-weight: 600; }
+
+.login-field { margin-top: 16px; text-align: left; }
+
+.login-field label {
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.login-field input {
+  width: 100%; margin-top: 6px; padding: 11px 14px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 0.92rem; outline: none;
+  transition: border-color 0.2s;
+}
+
+.login-field input:focus { border-color: var(--gold); }
+
+.login-btn {
+  width: 100%; margin-top: 24px; padding: 13px;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: white; border: none; border-radius: 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s;
+}
+
+.login-btn:hover { opacity: 0.9; }
+
+.login-error {
+  margin-top: 12px; color: var(--red); font-size: 0.82rem; display: none;
+}
+
+/* ── HEADER ── */
+.reparto-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+
+.reparto-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; font-weight: 900; color: var(--gold);
+}
+
+.header-right { display: flex; align-items: center; gap: 14px; }
+
+.header-date { font-size: 0.78rem; color: var(--text-muted); }
+
+.btn-logout {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 0.82rem; font-family: 'DM Sans', sans-serif;
+  transition: color 0.2s;
+}
+
+.btn-logout:hover { color: var(--red); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  background: var(--surface);
+}
+
+.tab {
+  background: none; border: none; border-bottom: 3px solid transparent;
+  color: var(--text-muted); padding: 14px 20px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
+
+.tab-badge {
+  background: var(--red); color: white;
+  border-radius: 50px; font-size: 0.65rem; font-weight: 700;
+  padding: 2px 7px; display: none;
+}
+
+/* ── RESUMEN ── */
+.resumen-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px; padding: 16px;
+}
+
+.resumen-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+  text-align: center;
+}
+
+.resumen-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.resumen-value { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--gold); margin-top: 4px; }
+.resumen-desc  { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ── LISTA PEDIDOS ── */
+.pedidos-list { padding: 0 16px 80px; }
+
+.pedido-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.pedido-card.estado-pagado        { border-left: 4px solid var(--blue); }
+.pedido-card.estado-en_camino     { border-left: 4px solid var(--orange); }
+.pedido-card.estado-entregado     { border-left: 4px solid var(--green); opacity: 0.75; }
+
+/* ── CARD HEADER ── */
+.pedido-card-header {
+  padding: 16px 18px 12px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  flex-wrap: wrap; gap: 8px;
+}
+
+.pedido-cliente { display: flex; flex-direction: column; gap: 3px; }
+
+.pedido-nombre { font-weight: 700; font-size: 1rem; color: var(--text); }
+.pedido-tel    { font-size: 0.82rem; color: var(--text-muted); }
+.pedido-dir    { font-size: 0.82rem; color: var(--text-muted); }
+
+.pedido-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+.pedido-hora  { font-size: 0.75rem; color: var(--text-muted); }
+.pedido-pago  { font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 50px; }
+.pago-yape    { background: rgba(107,33,168,0.2); color: #a855f7; }
+.pago-efectivo{ background: rgba(46,204,113,0.15); color: var(--green); }
+
+/* ── ITEMS ── */
+.pedido-items {
+  margin: 0 18px 12px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.pedido-total {
+  padding: 0 18px 4px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; font-weight: 700; color: var(--gold);
+}
+
+/* ── ESTADO BADGE ── */
+.estado-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 4px 12px; border-radius: 50px; margin: 0 18px 14px;
+}
+
+.badge-pagado     { background: rgba(79,110,247,0.15); color: var(--blue); }
+.badge-en_camino  { background: rgba(243,156,18,0.15); color: var(--orange); }
+.badge-entregado  { background: rgba(46,204,113,0.15); color: var(--green); }
+
+/* ── BOTONES DE ACCIÓN ── */
+.pedido-actions {
+  display: flex; gap: 10px;
+  padding: 0 18px 18px;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  flex: 1; min-width: 120px;
+  border: none; border-radius: 10px;
+  padding: 11px 14px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
+.btn-action:hover  { opacity: 0.88; transform: scale(1.02); }
+.btn-action:active { transform: scale(0.97); }
+
+.btn-en-camino { background: linear-gradient(135deg, #e67e22, var(--orange)); color: white; }
+.btn-entregado { background: linear-gradient(135deg, #27ae60, var(--green)); color: white; }
+.btn-whatsapp  { background: #25D366; color: white; }
+.btn-maps      { background: rgba(79,110,247,0.15); color: var(--blue); border: 1px solid var(--blue); }
+
+/* ── EMPTY ── */
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--text-muted);
+}
+
+.empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 480px) {
+  .pedido-card-header { flex-direction: column; }
+  .pedido-meta { align-items: flex-start; }
+}
