@@ -71,6 +71,9 @@
           <span class="icon">📋</span> Pedidos
           <span class="sidebar-badge" id="pendingBadge"></span>
         </div>
+        <div class="sidebar-item" onclick="showSection('archive', this)">
+          <span class="icon">📁</span> Archivo
+        </div>
         <div class="sidebar-item" onclick="showSection('settings', this)">
           <span class="icon">⚙️</span> Configuración
         </div>
@@ -133,6 +136,21 @@
 
           <!-- Lista de pedidos -->
           <div id="ordersList"></div>
+        </div>
+
+        <!-- ── SECCIÓN ARCHIVO ── -->
+        <div id="section-archive" style="display:none">
+          <div class="page-title">📁 Archivo de Pedidos</div>
+          <div class="page-sub">Pedidos entregados — archivados automáticamente</div>
+          <div class="stats-row" id="archiveStatsRow"></div>
+          <div class="orders-toolbar">
+            <input type="date" id="filterArchiveDate" class="date-filter"
+              onchange="filterArchiveByDate(this.value)" title="Filtrar por fecha">
+            <button class="btn-reset" onclick="clearArchiveFilter()" style="font-size:0.8rem;padding:7px 12px">
+              ✕ Limpiar filtro
+            </button>
+          </div>
+          <div id="archiveList"></div>
         </div>
 
         <!-- ── SECCIÓN CONFIGURACIÓN ── -->

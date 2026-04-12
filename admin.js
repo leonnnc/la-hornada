@@ -5,7 +5,7 @@ import {
   fsGetProducts, fsSaveProduct, fsSaveAllProducts,
   fsDeleteProduct, fsOnProducts, fsInitIfEmpty,
   fsResetProducts, fsOnOrders, fsOnArchivedOrders,
-  fsUpdateOrderStatus, fsArchivarPedido
+  fsUpdateOrderStatus
 } from './firebase.js';
 
 /* ── CREDENCIALES ── */
@@ -72,14 +72,15 @@ function startBlockCountdown() {
 const EMOJIS = ['🥟','🍩','🥧','🍮','🌀','🍪','🎂','🥐','🧁','🍞','🥖','🧇','🥞','🍰','🫓','🥨','🍡','🧆'];
 
 /* ── STATE ── */
-let products      = [];
-let allOrders     = [];
+let products       = [];
+let allOrders      = [];
 let archivedOrders = [];
-let currentFilter = 'all';
-let currentDate   = '';
-let editingId     = null;
-let deletingId    = null;
-let selectedEmoji = '🥟';
+let archiveDateFilter = '';
+let currentFilter  = 'all';
+let currentDate    = '';
+let editingId      = null;
+let deletingId     = null;
+let selectedEmoji  = '🥟';
 
 /* ── SANITIZAR ── */
 function esc(str) {
@@ -164,7 +165,7 @@ async function initAdmin() {
   // Escuchar pedidos archivados
   fsOnArchivedOrders(orders => {
     archivedOrders = orders;
-    renderOrders(); // re-render para actualizar sección archivo
+    renderArchive();
   });
 }
 
@@ -608,21 +609,84 @@ function renderOrders() {
         ${orders.map(o => orderCard(o)).join('')}
       </div>`;
   }).join('');
+}
 
-  // Sección archivados (colapsable)
-  if (archivedOrders.length > 0) {
-    const archivedTotal = archivedOrders.reduce((s, o) => s + (o.total || 0), 0);
-    container.innerHTML += `
-      <div class="archived-section">
-        <button class="archived-toggle" onclick="toggleArchived(this)">
-          📁 Pedidos archivados (${archivedOrders.length}) — S/ ${archivedTotal.toFixed(2)}
-          <span class="toggle-arrow">▼</span>
-        </button>
-        <div class="archived-list" style="display:none">
-          ${archivedOrders.map(o => orderCard(o, true)).join('')}
-        </div>
+/* ═══════════════════════════════════════
+   ARCHIVO
+═══════════════════════════════════════ */
+function renderArchive() {
+  let list = [...archivedOrders];
+
+  // Filtro por fecha
+  if (archiveDateFilter) {
+    list = list.filter(o => {
+      const iso = new Date(o.createdAt).toISOString().split('T')[0];
+      return iso === archiveDateFilter;
+    });
+  }
+
+  // Stats archivo
+  const totalArchive = archivedOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const statsEl = document.getElementById('archiveStatsRow');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">Total archivados</div>
+        <div class="stat-value">${archivedOrders.length}</div>
+        <div class="stat-desc">pedidos entregados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ingresos totales</div>
+        <div class="stat-value" style="color:var(--green);font-size:1.4rem">S/ ${totalArchive.toFixed(2)}</div>
+        <div class="stat-desc">histórico</div>
       </div>`;
   }
+
+  const container = document.getElementById('archiveList');
+  if (!container) return;
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+        <div style="font-size:3rem;margin-bottom:12px">📭</div>
+        <p>No hay pedidos archivados${archiveDateFilter ? ' en esta fecha' : ''}.</p>
+      </div>`;
+    return;
+  }
+
+  // Agrupar por día
+  const byDay = {};
+  list.forEach(o => {
+    const d = new Date(o.createdAt);
+    const key = d.toLocaleDateString('es-PE', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    if (!byDay[key]) byDay[key] = [];
+    byDay[key].push(o);
+  });
+
+  container.innerHTML = Object.entries(byDay).map(([day, orders]) => {
+    const dayTotal = orders.reduce((s, o) => s + (o.total || 0), 0);
+    return `
+      <div class="orders-day-group">
+        <div class="orders-day-header">
+          <span class="orders-day-label">📅 ${day}</span>
+          <span class="orders-day-total">S/ ${dayTotal.toFixed(2)}</span>
+        </div>
+        ${orders.map(o => orderCard(o, true)).join('')}
+      </div>`;
+  }).join('');
+}
+
+window.filterArchiveByDate = function(val) {
+  archiveDateFilter = val;
+  renderArchive();
+};
+
+window.clearArchiveFilter = function() {
+  archiveDateFilter = '';
+  const input = document.getElementById('filterArchiveDate');
+  if (input) input.value = '';
+  renderArchive();
+};
 }
 
 function orderCard(o, isArchived = false) {
@@ -672,9 +736,6 @@ function orderCard(o, isArchived = false) {
                   onclick="changeOrderStatus('${o.id}','pendiente_envio')">🚚 Por enviar</button>
                 <button class="status-btn ${o.estado==='entregado'?'active-done':''}"
                   onclick="changeOrderStatus('${o.id}','entregado')">📦 Entregado</button>
-                ${o.estado === 'entregado'
-                  ? `<button class="status-btn btn-archivar" onclick="archivarPedido('${o.id}')">📁 Archivar</button>`
-                  : ''}
               </div>
             </div>`
         }
@@ -697,19 +758,6 @@ window.filterByDate = function(val) {
 window.changeOrderStatus = async function(id, newStatus) {
   await fsUpdateOrderStatus(id, newStatus);
   showToast(`✅ Estado actualizado`);
-};
-
-window.archivarPedido = async function(id) {
-  await fsArchivarPedido(id);
-  showToast('📁 Pedido archivado');
-};
-
-window.toggleArchived = function(btn) {
-  const list = btn.nextElementSibling;
-  const arrow = btn.querySelector('.toggle-arrow');
-  const visible = list.style.display !== 'none';
-  list.style.display = visible ? 'none' : 'block';
-  arrow.textContent = visible ? '▼' : '▲';
 };
 
 /* ═══════════════════════════════════════

@@ -133,21 +133,16 @@ function fsWatchOrderStatus(orderId, callback) {
   });
 }
 
-/* ── Actualizar estado de un pedido (archiva si es entregado) ── */
+/* ── Actualizar estado de un pedido (archiva automáticamente si es entregado) ── */
 async function fsUpdateOrderStatus(id, status) {
   const ref = doc(db, 'orders', id);
   const updates = { estado: status };
   if (status === 'entregado') {
-    updates.archivado    = false; // queda visible hasta que admin archive
-    updates.entregadoAt  = Date.now();
+    updates.archivado   = true;
+    updates.entregadoAt = Date.now();
+    updates.archivadoAt = Date.now();
   }
   await updateDoc(ref, updates);
-}
-
-/* ── Archivar pedido manualmente ── */
-async function fsArchivarPedido(id) {
-  const ref = doc(db, 'orders', id);
-  await updateDoc(ref, { archivado: true, archivadoAt: Date.now() });
 }
 
 /* ── Escuchar pedidos activos (no archivados) ── */
