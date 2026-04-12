@@ -84,7 +84,19 @@ async function fsInitIfEmpty() {
   }
 }
 
+/* ── Forzar reset completo con productos por defecto ── */
+async function fsResetProducts() {
+  // Borrar todos los documentos existentes
+  const snap = await getDocs(PRODUCTS_COL);
+  const batch = writeBatch(db);
+  snap.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+  // Volver a cargar los defaults
+  await fsSaveAllProducts(DEFAULT_PRODUCTS.map((p, i) => ({ ...p, order: i })));
+}
+
 export {
   db, fsGetProducts, fsSaveProduct, fsSaveAllProducts,
-  fsDeleteProduct, fsDeductStock, fsOnProducts, fsInitIfEmpty
+  fsDeleteProduct, fsDeductStock, fsOnProducts,
+  fsInitIfEmpty, fsResetProducts
 };

@@ -1,7 +1,5 @@
 /* =============================================
    LA HORNADA — Productos por defecto (compartido)
-   Usado por tienda.js y admin.js
-   stock: número de unidades disponibles (0 = sin stock)
    ============================================= */
 
 const DEFAULT_PRODUCTS = [
@@ -11,9 +9,10 @@ const DEFAULT_PRODUCTS = [
     desc: "Rellenas de carne molida jugosa, cebolla, aceitunas y huevo. Horneadas al punto perfecto.",
     price: 3.50,
     emoji: "🥟",
-    img: "img/empanadas-carne.jpg",
+    img: "img/ecarne.jpg",
     available: true,
-    stock: 10
+    stock: 10,
+    order: 0
   },
   {
     id: 2,
@@ -21,9 +20,10 @@ const DEFAULT_PRODUCTS = [
     desc: "Con pollo deshilachado, ají amarillo y especias. Una delicia muy peruana.",
     price: 3.50,
     emoji: "🥟",
-    img: "img/empanadas-pollo.jpg",
+    img: "img/epollo.jpg",
     available: true,
-    stock: 8
+    stock: 8,
+    order: 1
   },
   {
     id: 3,
@@ -31,9 +31,10 @@ const DEFAULT_PRODUCTS = [
     desc: "Crujientes por fuera, suaves por dentro. Acompañados de salsa de chocolate caliente.",
     price: 5.00,
     emoji: "🍩",
-    img: "img/churros.jpg",
+    img: "img/cchocolate.jpg",
     available: true,
-    stock: 0
+    stock: 6,
+    order: 2
   },
   {
     id: 4,
@@ -41,9 +42,10 @@ const DEFAULT_PRODUCTS = [
     desc: "Masa hojaldrada artesanal con relleno de manzana caramelizada y canela. Porción generosa.",
     price: 8.00,
     emoji: "🥧",
-    img: "img/pie-manzana.jpg",
+    img: "img/pmanzana.jpg",
     available: true,
-    stock: 5
+    stock: 5,
+    order: 3
   },
   {
     id: 5,
@@ -51,9 +53,10 @@ const DEFAULT_PRODUCTS = [
     desc: "Postre cremoso y suave horneado a baño María. Sabor tradicional irresistible.",
     price: 6.50,
     emoji: "🍮",
-    img: "img/leche-asada.jpg",
+    img: "img/lasada.jpg",
     available: true,
-    stock: 0
+    stock: 4,
+    order: 4
   },
   {
     id: 6,
@@ -61,9 +64,10 @@ const DEFAULT_PRODUCTS = [
     desc: "Hojaldradas, caramelizadas y con azúcar glas. Perfectas con un buen café.",
     price: 2.50,
     emoji: "🌀",
-    img: "img/orejas.jpg",
+    img: "img/odulces.jpg",
     available: true,
-    stock: 15
+    stock: 15,
+    order: 5
   },
   {
     id: 7,
@@ -73,7 +77,8 @@ const DEFAULT_PRODUCTS = [
     emoji: "🍪",
     img: "img/alfajores.jpg",
     available: true,
-    stock: 12
+    stock: 12,
+    order: 6
   },
   {
     id: 8,
@@ -81,8 +86,9 @@ const DEFAULT_PRODUCTS = [
     desc: "Húmeda, esponjosa y con cobertura de ganache. Porción individual deliciosa.",
     price: 9.00,
     emoji: "🎂",
-    img: "img/torta-chocolate.jpg",
+    img: "img/tchocolate.jpg",
     available: true,
-    stock: 3
+    stock: 3,
+    order: 7
   }
 ];

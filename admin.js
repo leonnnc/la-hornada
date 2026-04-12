@@ -3,7 +3,7 @@
    ============================================= */
 import {
   fsGetProducts, fsSaveProduct, fsSaveAllProducts,
-  fsDeleteProduct, fsOnProducts, fsInitIfEmpty
+  fsDeleteProduct, fsOnProducts, fsInitIfEmpty, fsResetProducts
 } from './firebase.js';
 
 /* ── CREDENCIALES ── */
@@ -378,9 +378,12 @@ window.confirmDelete = async function() {
    RESTAURAR
 ═══════════════════════════════════════ */
 window.confirmReset = async function() {
-  if (confirm('¿Restaurar todos los productos a los valores predeterminados?')) {
-    await fsSaveAllProducts(DEFAULT_PRODUCTS.map((p, i) => ({ ...p, order: i })));
-    showToast('↺ Productos restaurados');
+  if (confirm('¿Restaurar todos los productos a los valores predeterminados? Se perderán los cambios actuales.')) {
+    const btn = document.querySelector('.btn-reset');
+    if (btn) { btn.disabled = true; btn.textContent = 'Restaurando...'; }
+    await fsResetProducts();
+    showToast('↺ Productos restaurados con imágenes y stock correctos');
+    if (btn) { btn.disabled = false; btn.textContent = '↺ Restaurar predeterminados'; }
   }
 };
 
