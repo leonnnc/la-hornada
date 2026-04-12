@@ -516,72 +516,72 @@ function generateFlyer(p, cfg) {
     ctx.fillText(name, W / 2, 190);
 
     // ── SELLO DE PRECIO ──
-    const bx = W - 170, by = imgY + 80, br = 90;
+    const bx = W - 150, by = imgY + 90, br = 85;
     ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
     for (let i = 0; i < 20; i++) {
       const a1 = (i / 20) * Math.PI * 2;
       const a2 = ((i + 0.5) / 20) * Math.PI * 2;
       ctx.lineTo(bx + Math.cos(a1) * br, by + Math.sin(a1) * br);
-      ctx.lineTo(bx + Math.cos(a2) * (br - 16), by + Math.sin(a2) * (br - 16));
+      ctx.lineTo(bx + Math.cos(a2) * (br - 14), by + Math.sin(a2) * (br - 14));
     }
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = '#3D2314';
-    ctx.font = 'bold 52px Georgia, serif';
+    ctx.font = 'bold 46px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`S/${Number(p.price).toFixed(2)}`, bx, by - 4);
-    ctx.font = 'bold 22px sans-serif';
-    ctx.fillText('POR UNIDAD', bx, by + 28);
+    ctx.fillText(`S/ ${Number(p.price).toFixed(2)}`, bx, by - 6);
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('POR UNIDAD', bx, by + 24);
 
     // ── FLECHA ──
-    const arrowY = imgY + imgH + 20;
+    const arrowY = imgY + imgH + 24;
     ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 5;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(W / 2, arrowY);
-    ctx.lineTo(W / 2, arrowY + 60);
-    ctx.moveTo(W / 2 - 28, arrowY + 32);
-    ctx.lineTo(W / 2, arrowY + 60);
-    ctx.lineTo(W / 2 + 28, arrowY + 32);
+    ctx.lineTo(W / 2, arrowY + 52);
+    ctx.moveTo(W / 2 - 24, arrowY + 28);
+    ctx.lineTo(W / 2, arrowY + 52);
+    ctx.lineTo(W / 2 + 24, arrowY + 28);
     ctx.stroke();
 
     // ── BOTÓN ORDENAR ──
-    const btnY = arrowY + 80;
+    const btnY = arrowY + 68;
     ctx.fillStyle = '#B84C2A';
-    roundRect(ctx, 60, btnY, W - 120, 100, 50);
+    roundRect(ctx, 50, btnY, W - 100, 90, 45);
     ctx.fill();
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 52px Georgia, serif';
+    ctx.font = 'bold 46px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('ORDENAR AQUÍ', W / 2, btnY + 68);
+    ctx.fillText('ORDENAR AQUÍ', W / 2, btnY + 60);
 
     // ── DELIVERY GRATIS ──
     ctx.fillStyle = '#E4A84B';
-    ctx.font = 'bold 38px Georgia, serif';
-    ctx.fillText('🚚  DELIVERY GRATIS', W / 2, btnY + 148);
+    ctx.font = 'bold 34px Georgia, serif';
+    ctx.fillText('🚚  DELIVERY GRATIS', W / 2, btnY + 130);
 
     // ── INFO ──
-    const infoY = btnY + 200;
+    const infoY = btnY + 170;
     ctx.fillStyle = 'rgba(255,255,255,0.07)';
-    roundRect(ctx, 40, infoY, W - 80, 130, 16);
+    roundRect(ctx, 30, infoY, W - 60, 110, 14);
     ctx.fill();
 
     ctx.fillStyle = '#FAF6EF';
-    ctx.font = 'bold 30px sans-serif';
+    ctx.font = 'bold 26px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`📞 WhatsApp: ${phone}`, W / 2, infoY + 48);
+    ctx.fillText(`📞 WhatsApp: ${phone}`, W / 2, infoY + 42);
     ctx.fillStyle = '#E4A84B';
-    ctx.font = '26px sans-serif';
-    ctx.fillText(`🌐 ${storeUrl}`, W / 2, infoY + 92);
+    ctx.font = '22px sans-serif';
+    ctx.fillText(`🌐 ${storeUrl}`, W / 2, infoY + 80);
 
     // ── MARCA ──
     ctx.fillStyle = '#E4A84B';
-    ctx.font = 'bold 32px Georgia, serif';
+    ctx.font = 'bold 26px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`🍞 ${storeName} — Delicias Artesanales`, W / 2, H - 30);
+    ctx.fillText(`🍞 ${storeName} — Delicias Artesanales`, W / 2, H - 20);
 
     document.getElementById('flyerPreview').src = canvas.toDataURL('image/png');
   };
