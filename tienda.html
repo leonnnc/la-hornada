@@ -225,51 +225,16 @@
   </div>
 
   <!-- ═══════════════════════════════════════
-       MODAL DETALLE PRODUCTO
+       MODAL FLYER PRODUCTO
   ════════════════════════════════════════ -->
   <div class="modal-overlay" id="productModal" onclick="closeProductModal(event)">
     <div class="product-modal-box">
       <button class="product-modal-close" onclick="closeProductModal()">✕</button>
-
-      <!-- Imagen con título encima estilo flyer -->
-      <div class="product-modal-img-wrap">
-        <img id="pmImg" src="" alt="">
-        <div class="product-modal-emoji" id="pmEmoji"></div>
-        <div class="product-modal-title-overlay">
-          <div class="pm-pedido-tag">🛒 ¡Haz tu pedido!</div>
-          <h2 id="pmName"></h2>
-        </div>
-      </div>
-
-      <div class="product-modal-body">
-
-        <!-- Descripción -->
-        <div class="pm-desc-block" id="pmDesc"></div>
-
-        <!-- Precio + delivery -->
-        <div class="pm-price-block">
-          <div>
-            <div class="pm-price-label">Precio por unidad</div>
-            <div class="pm-price-value" id="pmPrice"></div>
-          </div>
-          <div class="pm-delivery-badge">🚚 Delivery<br>GRATIS 🎉</div>
-        </div>
-
-        <!-- Info cards -->
-        <div class="pm-info-row" id="pmInfoRow"></div>
-
-        <!-- Flyer generado -->
-        <div class="flyer-section">
-          <div class="social-label">🖼️ Flyer para redes sociales</div>
-          <canvas id="flyerCanvas" style="display:none"></canvas>
-          <img id="flyerPreview" class="flyer-preview" alt="Flyer">
-          <div class="flyer-btns">
-            <button class="btn-download" onclick="downloadFlyer()">⬇️ Descargar imagen</button>
-            <button class="btn-copy" id="btnCopy" onclick="copySocialText()">📋 Copiar texto</button>
-          </div>
-          <div class="social-text" id="pmSocialText" style="margin-top:10px"></div>
-        </div>
-
+      <canvas id="flyerCanvas" style="display:none"></canvas>
+      <img id="flyerPreview" class="flyer-preview" alt="Flyer">
+      <div class="flyer-btns">
+        <button class="btn-download" onclick="downloadFlyer()">⬇️ Descargar flyer</button>
+        <button class="btn-whatsapp-share" onclick="shareWhatsApp()">💬 Enviar por WhatsApp</button>
         <button class="product-modal-add" id="pmAddBtn">🛒 Agregar al carrito</button>
       </div>
     </div>
