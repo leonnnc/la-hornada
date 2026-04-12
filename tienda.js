@@ -440,23 +440,43 @@ window.openProductModal = function(id) {
   const storeName = cfg.name  || 'La Hornada';
   const phone     = cfg.phone || '975 524 363';
   const hours     = cfg.hours || 'Lun–Dom 8am–8pm';
+  const storeUrl  = window.location.href.replace('tienda.html','').replace(/\/$/, '') + '/tienda.html';
+
+  const frases = [
+    `¿Se te antojó? 😍 ¡Nosotros lo preparamos con todo el amor!`,
+    `Hecho con ingredientes frescos y recetas de siempre. 🌾`,
+    `El sabor que te hace volver una y otra vez. 🔥`,
+    `Porque lo artesanal siempre sabe mejor. ❤️`,
+  ];
+  const frase = frases[p.id % frases.length];
 
   const socialText =
-`✨ ${p.emoji} *${p.name}* ${p.emoji}
+`🔥 ${p.emoji} ¡IMPERDIBLE! ${p.emoji} 🔥
+━━━━━━━━━━━━━━━━━━━━━
+*${p.name.toUpperCase()}*
+━━━━━━━━━━━━━━━━━━━━━
 
 ${p.desc}
 
-💰 Precio: S/ ${Number(p.price).toFixed(2)} por unidad
-🚚 Delivery a domicilio — ¡Gratis!
+${frase}
 
-📲 Haz tu pedido ahora:
-👉 ${window.location.origin}${window.location.pathname.replace('tienda.html','')}
-📞 WhatsApp: ${phone}
-🕐 Horario: ${hours}
+💰 Solo *S/ ${Number(p.price).toFixed(2)}* por unidad
+🚚 Delivery GRATIS a domicilio 🎉
+⏰ ${hours}
 
-🍞 *${storeName}* — Delicias artesanales hechas con amor ❤️
+━━━━━━━━━━━━━━━━━━━━━
+🛒 *¡HAGA SU PEDIDO AHORA!*
+👇 Ingresa aquí y elige lo que más te antoje:
+🌐 ${storeUrl}
 
-#LaHornada #DeliciasArtesanales #${p.name.replace(/\s+/g,'')} #Delivery #Lima`;
+📲 También por WhatsApp:
+📞 ${phone}
+━━━━━━━━━━━━━━━━━━━━━
+
+🍞 *${storeName}* — Delicias artesanales
+✨ Hechas con amor, entregadas con cariño ✨
+
+#${storeName.replace(/\s+/g,'')} #${p.name.replace(/\s+/g,'')} #DeliciasArtesanales #Delivery #PedidosOnline #ComidaPeruana #Antojo #HechoConAmor`;
 
   document.getElementById('pmSocialText').textContent = socialText;
 
