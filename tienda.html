@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Hornada — Delicias Artesanales</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="tienda.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════
+       HEADER
+  ════════════════════════════════════════ -->
+  <header>
+    <div class="logo">
+      La Hornada
+      <span>delicias artesanales</span>
+    </div>
+    <div class="nav-right">
+      <a class="admin-link" href="admin.html">⚙️ Admin</a>
+      <button class="cart-btn" onclick="openCart()">
+        🛒 Carrito
+        <span class="cart-badge" id="cartBadge">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════
+       HERO
+  ════════════════════════════════════════ -->
+  <section class="hero">
+    <h1>Sabores que <em>enamoran</em><br>desde el primer bocado</h1>
+    <p>Productos horneados y fritos con recetas de siempre, hechos con amor</p>
+    <div class="hero-tags">
+      <span class="hero-tag">🌾 Artesanal</span>
+      <span class="hero-tag">🔥 Recién hecho</span>
+      <span class="hero-tag">❤️ Con amor</span>
+      <span class="hero-tag">🚚 A domicilio</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       PRODUCTOS
+  ════════════════════════════════════════ -->
+  <div class="section-label">
+    <h2>Nuestros Productos</h2>
+    <p>Selecciona lo que más te antoje</p>
+    <div class="divider"></div>
+  </div>
+
+  <div class="products-grid" id="productsGrid">
+    <!-- Renderizado dinámicamente por tienda.js -->
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       CARRITO LATERAL
+  ════════════════════════════════════════ -->
+  <div class="cart-overlay" id="cartOverlay" onclick="handleOverlayClick(event)">
+    <div class="cart-panel" id="cartPanel">
+
+      <div class="cart-header">
+        <h3>🛒 Tu Pedido</h3>
+        <button class="close-btn" onclick="closeCart()">✕</button>
+      </div>
+
+      <div class="cart-items" id="cartItems">
+        <div class="cart-empty">
+          <div class="empty-icon">🍽️</div>
+          <p>Tu carrito está vacío.<br>¡Agrega algo delicioso!</p>
+        </div>
+      </div>
+
+      <div class="cart-footer" id="cartFooter" style="display:none">
+        <div class="cart-row">
+          <span>Subtotal</span>
+          <span id="subtotalAmt">S/ 0.00</span>
+        </div>
+        <div class="cart-row">
+          <span>Delivery</span>
+          <span style="color:#C8862A">Gratis 🎉</span>
+        </div>
+        <div class="cart-total-row">
+          <span class="cart-total-label">Total</span>
+          <span class="cart-total-amt" id="totalAmt">S/ 0.00</span>
+        </div>
+        <button class="order-btn" onclick="placeOrder()">✅ Confirmar Pedido</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       TOAST
+  ════════════════════════════════════════ -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL DE ÉXITO
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-icon">🎉</div>
+      <h3>¡Pedido confirmado!</h3>
+      <p>
+        Tu pedido ha sido recibido. Lo prepararemos con todo el cariño.<br>
+        Pronto nos ponemos en contacto contigo. ¡Gracias!
+      </p>
+      <button class="modal-close" onclick="closeModal()">¡Genial, gracias!</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════ -->
+  <footer>
+    <strong>La Hornada</strong> — Delicias Artesanales<br>
+    📍 Lima, Perú &nbsp;|&nbsp; 📞 +51 987 654 321 &nbsp;|&nbsp; 🕐 Lun–Dom 8am–8pm
+  </footer>
+
+  <script src="products.js"></script>
+  <script src="products.js"></script>
+  <script src="tienda.js"></script>
+</body>
+</html>

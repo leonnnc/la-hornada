@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — La Hornada</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════
+       LOGIN
+  ════════════════════════════════════════ -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <div class="login-logo">
+        La Hornada
+        <span>panel de administración</span>
+      </div>
+      <div class="login-title">Acceso Administrador</div>
+      <div class="login-sub">Ingresa tus credenciales para continuar</div>
+
+      <div class="login-field">
+        <label>Usuario</label>
+        <input type="text" id="loginUser" placeholder="admin" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label>Contraseña</label>
+        <input
+          type="password"
+          id="loginPass"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          onkeydown="if(event.key==='Enter') doLogin()"
+        >
+      </div>
+
+      <button class="login-btn" onclick="doLogin()">Ingresar →</button>
+      <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+      <div class="login-hint">💡 Demo: usuario <strong>admin</strong> / contraseña <strong>1234</strong></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ADMIN UI
+  ════════════════════════════════════════ -->
+  <div id="adminUI" style="display:none">
+
+    <!-- HEADER -->
+    <header class="admin-header">
+      <div class="admin-logo">La Hornada <span>Admin Panel</span></div>
+      <div class="header-actions">
+        <a class="btn-store" href="tienda.html" target="_blank">🛍️ Ver tienda</a>
+        <button class="btn-logout" onclick="doLogout()">Salir →</button>
+      </div>
+    </header>
+
+    <div class="admin-layout">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-title">Menú</div>
+        <div class="sidebar-item active" onclick="showSection('products', this)">
+          <span class="icon">🍽️</span> Productos
+        </div>
+        <div class="sidebar-item" onclick="showSection('settings', this)">
+          <span class="icon">⚙️</span> Configuración
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="admin-main">
+
+        <!-- ── SECCIÓN PRODUCTOS ── -->
+        <div id="section-products">
+          <div class="page-title">Gestión de Productos</div>
+          <div class="page-sub">Edita nombre, descripción, precio, foto y disponibilidad</div>
+
+          <!-- Estadísticas -->
+          <div class="stats-row" id="statsRow"></div>
+
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <button class="btn-add" onclick="openAddModal()">＋ Nuevo Producto</button>
+            <button class="btn-reset" onclick="confirmReset()">↺ Restaurar predeterminados</button>
+          </div>
+
+          <!-- Tabla de productos -->
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Producto</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- ── SECCIÓN CONFIGURACIÓN ── -->
+        <div id="section-settings" style="display:none">
+          <div class="page-title">Configuración de la Tienda</div>
+          <div class="page-sub">Personaliza el nombre y datos de contacto</div>
+
+          <div class="settings-card">
+            <div class="form-row">
+              <label>Nombre de la tienda</label>
+              <input type="text" id="cfg-name" placeholder="La Hornada">
+            </div>
+            <div class="form-row">
+              <label>Teléfono</label>
+              <input type="text" id="cfg-phone" placeholder="+51 987 654 321">
+            </div>
+            <div class="form-row">
+              <label>Dirección</label>
+              <input type="text" id="cfg-addr" placeholder="Lima, Perú">
+            </div>
+            <div class="form-row">
+              <label>Horario</label>
+              <input type="text" id="cfg-hours" placeholder="Lun–Dom 8am–8pm">
+            </div>
+            <button class="btn-save" onclick="saveSettings()" style="width:100%;padding:12px">
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL EDITAR / AGREGAR PRODUCTO
+  ════════════════════════════════════════ -->
+  <div class="modal-bg" id="editModal">
+    <div class="modal-box">
+
+      <div class="modal-header">
+        <h3 id="modalTitle">Editar Producto</h3>
+        <button class="modal-close-x" onclick="closeModal()">✕</button>
+      </div>
+
+      <!-- Nombre y precio -->
+      <div class="form-2col">
+        <div class="form-row" style="margin:0">
+          <label>Nombre del producto</label>
+          <input type="text" id="f-name" placeholder="Ej: Empanadas de Carne">
+        </div>
+        <div class="form-row" style="margin:0">
+          <label>Precio (S/)</label>
+          <input type="number" id="f-price" min="0" step="0.50" placeholder="0.00">
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div class="form-row" style="margin-top:16px">
+        <label>Descripción</label>
+        <textarea id="f-desc" placeholder="Describe el producto..."></textarea>
+      </div>
+
+      <!-- Emoji -->
+      <div class="form-row">
+        <label>Emoji del producto</label>
+        <div class="emoji-picker" id="emojiPicker"></div>
+      </div>
+
+      <!-- URL de imagen o ruta local -->
+      <div class="form-row">
+        <label>URL o ruta de imagen</label>
+        <input type="text" id="f-img" placeholder="img/mi-foto.jpg  ó  https://..." oninput="updatePreview()">
+        <div class="img-path-hint">
+          💡 Para imágenes del hosting escribe la ruta: <code>img/nombre-foto.jpg</code>
+        </div>
+        <div class="img-preview-wrap" id="imgPreviewWrap">
+          <img id="imgPreview" src="" alt="" style="display:none">
+          <span class="no-img" id="noImgMsg">Vista previa de la imagen</span>
+        </div>
+      </div>
+
+      <!-- Upload desde dispositivo -->
+      <div class="form-row">
+        <label>O sube una foto desde tu dispositivo</label>
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-icon">📁</div>
+          <p>Haz clic para seleccionar una imagen (JPG, PNG, WEBP)</p>
+          <input type="file" id="fileInput" accept="image/*" onchange="handleFileUpload(event)">
+        </div>
+      </div>
+
+      <!-- Disponibilidad -->
+      <div class="form-row">
+        <label>Disponibilidad</label>
+        <div style="display:flex; gap:16px; margin-top:8px">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; font-size:0.92rem; font-weight:400; color:var(--text)">
+            <input type="radio" name="avail" id="f-avail-yes" value="true" checked> Disponible
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; font-size:0.92rem; font-weight:400; color:var(--text)">
+            <input type="radio" name="avail" id="f-avail-no" value="false"> No disponible
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer del modal -->
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="btn-save"   onclick="saveProduct()">💾 Guardar cambios</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL CONFIRMAR ELIMINACIÓN
+  ════════════════════════════════════════ -->
+  <div class="modal-bg" id="delModal">
+    <div class="modal-box confirm-modal">
+      <div class="confirm-icon">🗑️</div>
+      <h3>¿Eliminar producto?</h3>
+      <p id="delProductName"></p>
+      <p style="margin-top:8px">Esta acción no se puede deshacer.</p>
+      <div class="confirm-footer">
+        <button class="btn-cancel"      onclick="closeDelModal()">Cancelar</button>
+        <button class="btn-confirm-del" onclick="confirmDelete()">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       TOAST
+  ════════════════════════════════════════ -->
+  <div class="toast" id="toast"></div>
+
+  <script src="products.js"></script>
+  <script src="products.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

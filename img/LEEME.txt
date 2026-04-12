@@ -1,0 +1,25 @@
+CARPETA DE IMÁGENES — La Hornada
+=================================
+
+Sube aquí las fotos de tus productos.
+Formatos aceptados: JPG, PNG, WEBP
+
+Nombres de archivo para los productos por defecto:
+  empanadas-carne.jpg
+  empanadas-pollo.jpg
+  churros.jpg
+  pie-manzana.jpg
+  leche-asada.jpg
+  orejas.jpg
+  alfajores.jpg
+  torta-chocolate.jpg
+
+Para productos nuevos que agregues desde el Admin:
+  - Sube la foto a esta carpeta con el nombre que quieras
+  - En el campo "URL de imagen" del admin escribe: img/nombre-del-archivo.jpg
+  - O usa el botón "Subir foto" para cargarla directamente desde tu dispositivo
+
+Recomendaciones:
+  - Tamaño ideal: 600x400 px o mayor
+  - Peso máximo recomendado: 300 KB por imagen
+  - Relación de aspecto: 3:2 o 4:3
