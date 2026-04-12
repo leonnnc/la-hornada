@@ -82,7 +82,7 @@ function renderProducts() {
     const sinStock = (p.stock ?? 99) === 0;
     return `
     <div class="product-card ${sinStock ? 'out-of-stock' : ''}">
-      <div class="product-img">
+      <div class="product-img" onclick="openProductModal(${p.id})" style="cursor:pointer">
         <img src="${imgSrc}" alt="${esc(p.name)}"
           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
         <div class="emoji-fallback" style="display:none">${p.emoji}</div>
@@ -414,7 +414,86 @@ window.closeCheckout = function() {
   renderProducts();
 };
 
-/* ── INIT ── */
+/* ── MODAL DETALLE PRODUCTO ── */
+window.openProductModal = function(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+
+  const imgSrc  = resolveImg(p.img);
+  const sinStock = (p.stock ?? 99) === 0;
+
+  // Imagen
+  const img = document.getElementById('pmImg');
+  img.src = imgSrc;
+  img.style.display = imgSrc ? 'block' : 'none';
+  img.onerror = () => { img.style.display = 'none'; document.getElementById('pmEmoji').style.display = 'flex'; };
+  document.getElementById('pmEmoji').textContent = p.emoji;
+  document.getElementById('pmEmoji').style.display = imgSrc ? 'none' : 'flex';
+
+  // Info
+  document.getElementById('pmName').textContent  = p.name;
+  document.getElementById('pmPrice').textContent = `S/ ${Number(p.price).toFixed(2)} / unidad`;
+  document.getElementById('pmDesc').textContent  = p.desc;
+
+  // Texto para redes sociales
+  const cfg = JSON.parse(localStorage.getItem('lahornada_settings') || '{}');
+  const storeName = cfg.name  || 'La Hornada';
+  const phone     = cfg.phone || '975 524 363';
+  const hours     = cfg.hours || 'Lun–Dom 8am–8pm';
+
+  const socialText =
+`✨ ${p.emoji} *${p.name}* ${p.emoji}
+
+${p.desc}
+
+💰 Precio: S/ ${Number(p.price).toFixed(2)} por unidad
+🚚 Delivery a domicilio — ¡Gratis!
+
+📲 Haz tu pedido ahora:
+👉 ${window.location.origin}${window.location.pathname.replace('tienda.html','')}
+📞 WhatsApp: ${phone}
+🕐 Horario: ${hours}
+
+🍞 *${storeName}* — Delicias artesanales hechas con amor ❤️
+
+#LaHornada #DeliciasArtesanales #${p.name.replace(/\s+/g,'')} #Delivery #Lima`;
+
+  document.getElementById('pmSocialText').textContent = socialText;
+
+  // Botón agregar
+  const addBtn = document.getElementById('pmAddBtn');
+  if (sinStock) {
+    addBtn.textContent = '📅 Pedir para mañana';
+    addBtn.onclick = () => { addPreorder(id); closeProductModal(); };
+    addBtn.style.background = 'linear-gradient(135deg, var(--gold-dim), var(--gold))';
+  } else {
+    addBtn.textContent = '🛒 Agregar al carrito';
+    addBtn.onclick = () => { addToCart(id); closeProductModal(); };
+    addBtn.style.background = 'linear-gradient(135deg, var(--brown), var(--rust))';
+  }
+
+  document.getElementById('productModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeProductModal = function(e) {
+  if (e && e.target !== document.getElementById('productModal') && !e.target.classList.contains('product-modal-close')) return;
+  document.getElementById('productModal').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+window.copySocialText = function() {
+  const text = document.getElementById('pmSocialText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btnCopy');
+    btn.textContent = '✅ ¡Copiado!';
+    btn.style.background = '#27ae60';
+    setTimeout(() => {
+      btn.textContent = '📋 Copiar texto';
+      btn.style.background = '';
+    }, 2000);
+  });
+};
 async function init() {
   applyStoreSettings();
 

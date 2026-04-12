@@ -738,6 +738,115 @@ header {
 
 .modal-close:hover { background: var(--rust); }
 
+/* ── MODAL DETALLE PRODUCTO ── */
+.product-modal-box {
+  background: var(--card-bg);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
+  animation: popIn 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.product-modal-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: rgba(0,0,0,0.08);
+  border: none; width: 34px; height: 34px;
+  border-radius: 50%; font-size: 1rem;
+  cursor: pointer; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); transition: background 0.2s;
+}
+
+.product-modal-close:hover { background: #fde8e8; color: var(--rust); }
+
+.product-modal-img-wrap {
+  height: 260px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
+  background: var(--warm);
+}
+
+.product-modal-img-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+
+.product-modal-emoji {
+  position: absolute; inset: 0;
+  display: none; align-items: center;
+  justify-content: center; font-size: 5rem;
+  background: var(--warm);
+}
+
+.product-modal-body { padding: 24px; }
+
+.product-modal-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 700;
+  color: var(--brown); line-height: 1.2;
+}
+
+.product-modal-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--gold); margin-top: 8px;
+}
+
+.product-modal-desc {
+  font-size: 0.92rem; color: var(--text-muted);
+  line-height: 1.6; margin-top: 10px;
+}
+
+/* ── SECCIÓN REDES ── */
+.social-section {
+  margin-top: 20px;
+  background: var(--warm);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.social-label {
+  font-size: 0.78rem; font-weight: 700;
+  color: var(--brown-mid); text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 10px;
+}
+
+.social-text {
+  font-size: 0.82rem; color: var(--text);
+  line-height: 1.6; white-space: pre-wrap;
+  background: white; border-radius: 10px;
+  padding: 12px 14px; max-height: 180px;
+  overflow-y: auto; border: 1px solid var(--warm);
+}
+
+.btn-copy {
+  margin-top: 10px; width: 100%;
+  background: var(--brown);
+  color: white; border: none;
+  border-radius: 10px; padding: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; transition: background 0.2s;
+}
+
+.btn-copy:hover { background: var(--rust); }
+
+.product-modal-add {
+  width: 100%; margin-top: 14px;
+  background: linear-gradient(135deg, var(--brown), var(--rust));
+  color: white; border: none; border-radius: 14px;
+  padding: 14px; font-family: 'DM Sans', sans-serif;
+  font-size: 1rem; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s;
+}
+
+.product-modal-add:hover { opacity: 0.9; }
+
 /* ── PANTALLA DE ESPERA ── */
 .waiting-anim {
   position: relative;

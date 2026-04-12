@@ -225,8 +225,33 @@
   </div>
 
   <!-- ═══════════════════════════════════════
-       FOOTER
+       MODAL DETALLE PRODUCTO
   ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="productModal" onclick="closeProductModal(event)">
+    <div class="product-modal-box">
+      <button class="product-modal-close" onclick="closeProductModal()">✕</button>
+      <div class="product-modal-img-wrap">
+        <img id="pmImg" src="" alt="">
+        <div class="product-modal-emoji" id="pmEmoji"></div>
+      </div>
+      <div class="product-modal-body">
+        <div class="product-modal-name" id="pmName"></div>
+        <div class="product-modal-price" id="pmPrice"></div>
+        <div class="product-modal-desc" id="pmDesc"></div>
+
+        <!-- Texto para redes -->
+        <div class="social-section">
+          <div class="social-label">📲 Texto para redes sociales</div>
+          <div class="social-text" id="pmSocialText"></div>
+          <button class="btn-copy" id="btnCopy" onclick="copySocialText()">
+            📋 Copiar texto
+          </button>
+        </div>
+
+        <button class="product-modal-add" id="pmAddBtn">🛒 Agregar al carrito</button>
+      </div>
+    </div>
+  </div>
   <footer>
     <strong>La Hornada</strong> — Delicias Artesanales<br>
     📍 Lima, Perú &nbsp;|&nbsp; 📞 +51 987 654 321 &nbsp;|&nbsp; 🕐 Lun–Dom 8am–8pm
