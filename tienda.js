@@ -450,24 +450,22 @@ window.closeProductModal = function(e) {
 /* ── GENERAR FLYER CON CANVAS ── */
 function generateFlyer(p, cfg) {
   const canvas = document.getElementById('flyerCanvas');
-  const W = 1080, H = 1920;
+  const W = 720, H = 1280;
   canvas.width  = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
   const storeName = cfg.name  || 'La Hornada';
-  const phone     = (cfg.phone || '975 524 363').replace(/\D/g,'').slice(-9);
-  const storeUrl  = window.location.href.includes('tienda.html')
-    ? window.location.href
-    : window.location.origin + window.location.pathname + 'tienda.html';
+  const phone     = (cfg.phone || '975 524 363').replace(/\s/g,'');
+  const storeUrl  = 'leonnnc.github.io/la-hornada';
 
   const draw = (productImg) => {
-    // ── FONDO MARRÓN ──
+    // ── FONDO ──
     ctx.fillStyle = '#3D2314';
     ctx.fillRect(0, 0, W, H);
 
-    // ── FOTO DEL PRODUCTO (zona central) ──
-    const imgY = 320, imgH = 900;
+    // ── FOTO DEL PRODUCTO ──
+    const imgY = 220, imgH = 680;
     if (productImg) {
       ctx.save();
       ctx.beginPath();
@@ -481,128 +479,119 @@ function generateFlyer(p, cfg) {
     } else {
       ctx.fillStyle = '#6B3A2A';
       ctx.fillRect(0, imgY, W, imgH);
-      ctx.font = '260px serif';
+      ctx.font = '180px serif';
       ctx.textAlign = 'center';
-      ctx.fillText(p.emoji, W / 2, imgY + imgH / 2 + 90);
+      ctx.fillText(p.emoji, W / 2, imgY + imgH / 2 + 60);
     }
 
-    // Gradiente superior sobre foto
-    const gTop = ctx.createLinearGradient(0, imgY, 0, imgY + 260);
-    gTop.addColorStop(0, 'rgba(61,35,20,0.92)');
+    // Gradiente superior
+    const gTop = ctx.createLinearGradient(0, imgY, 0, imgY + 200);
+    gTop.addColorStop(0, 'rgba(61,35,20,0.9)');
     gTop.addColorStop(1, 'rgba(61,35,20,0)');
     ctx.fillStyle = gTop;
-    ctx.fillRect(0, imgY, W, 260);
+    ctx.fillRect(0, imgY, W, 200);
 
-    // Gradiente inferior sobre foto
-    const gBot = ctx.createLinearGradient(0, imgY + imgH - 260, 0, imgY + imgH);
+    // Gradiente inferior
+    const gBot = ctx.createLinearGradient(0, imgY + imgH - 200, 0, imgY + imgH);
     gBot.addColorStop(0, 'rgba(61,35,20,0)');
     gBot.addColorStop(1, 'rgba(61,35,20,0.95)');
     ctx.fillStyle = gBot;
-    ctx.fillRect(0, imgY + imgH - 260, W, 260);
+    ctx.fillRect(0, imgY + imgH - 200, W, 200);
 
-    // ── TEXTO SUPERIOR: "DELICIOSAS" ──
+    // ── "DELICIOSAS" ──
     ctx.textAlign = 'center';
     ctx.fillStyle = '#E4A84B';
-    ctx.font = 'bold 110px Georgia, serif';
-    ctx.fillText('DELICIOSAS', W / 2, 160);
+    ctx.font = 'bold 72px Georgia, serif';
+    ctx.fillText('DELICIOSAS', W / 2, 100);
 
-    // ── NOMBRE DEL PRODUCTO (grande, rojo) ──
-    ctx.fillStyle = '#C8862A';
-    ctx.font = 'bold 148px Georgia, serif';
-    const nameUpper = p.name.toUpperCase();
-    // Si es muy largo, reducir
-    const nameFont = nameUpper.length > 12 ? 'bold 110px Georgia, serif' : 'bold 148px Georgia, serif';
-    ctx.font = nameFont;
-    ctx.fillText(nameUpper, W / 2, 300);
+    // ── NOMBRE DEL PRODUCTO — ajuste automático ──
+    ctx.fillStyle = '#FAF6EF';
+    const name = p.name.toUpperCase();
+    let fontSize = 80;
+    ctx.font = `bold ${fontSize}px Georgia, serif`;
+    while (ctx.measureText(name).width > W - 40 && fontSize > 36) {
+      fontSize -= 4;
+      ctx.font = `bold ${fontSize}px Georgia, serif`;
+    }
+    ctx.fillText(name, W / 2, 190);
 
-    // ── BADGE DE PRECIO (sello) ──
-    const bx = W - 260, by = imgY + 60, br = 130;
-    // Sello dentado
+    // ── SELLO DE PRECIO ──
+    const bx = W - 170, by = imgY + 80, br = 90;
     ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
     for (let i = 0; i < 20; i++) {
-      const angle = (i / 20) * Math.PI * 2;
-      const r1 = br, r2 = br - 22;
-      const x1 = bx + Math.cos(angle) * r1;
-      const y1 = by + Math.sin(angle) * r1;
-      const x2 = bx + Math.cos(angle + Math.PI / 20) * r2;
-      const y2 = by + Math.sin(angle + Math.PI / 20) * r2;
-      if (i === 0) ctx.beginPath();
-      ctx.lineTo(x1, y1);
-      ctx.lineTo(x2, y2);
+      const a1 = (i / 20) * Math.PI * 2;
+      const a2 = ((i + 0.5) / 20) * Math.PI * 2;
+      ctx.lineTo(bx + Math.cos(a1) * br, by + Math.sin(a1) * br);
+      ctx.lineTo(bx + Math.cos(a2) * (br - 16), by + Math.sin(a2) * (br - 16));
     }
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = '#3D2314';
-    ctx.font = 'bold 80px Georgia, serif';
+    ctx.font = 'bold 52px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`S/ ${Number(p.price).toFixed(2)}`, bx, by - 10);
-    ctx.font = 'bold 34px sans-serif';
-    ctx.fillText('POR UNIDAD', bx, by + 40);
+    ctx.fillText(`S/${Number(p.price).toFixed(2)}`, bx, by - 4);
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('POR UNIDAD', bx, by + 28);
 
-    // ── FLECHA HACIA ABAJO ──
-    const arrowY = imgY + imgH + 30;
+    // ── FLECHA ──
+    const arrowY = imgY + imgH + 20;
     ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 6;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(W / 2, arrowY);
-    ctx.lineTo(W / 2, arrowY + 80);
-    ctx.moveTo(W / 2 - 40, arrowY + 40);
-    ctx.lineTo(W / 2, arrowY + 80);
-    ctx.lineTo(W / 2 + 40, arrowY + 40);
+    ctx.lineTo(W / 2, arrowY + 60);
+    ctx.moveTo(W / 2 - 28, arrowY + 32);
+    ctx.lineTo(W / 2, arrowY + 60);
+    ctx.lineTo(W / 2 + 28, arrowY + 32);
     ctx.stroke();
 
-    // ── BOTÓN "ORDENAR" ──
-    const btnY = arrowY + 110;
+    // ── BOTÓN ORDENAR ──
+    const btnY = arrowY + 80;
     ctx.fillStyle = '#B84C2A';
-    roundRect(ctx, 100, btnY, W - 200, 130, 65);
+    roundRect(ctx, 60, btnY, W - 120, 100, 50);
     ctx.fill();
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 72px Georgia, serif';
+    ctx.font = 'bold 52px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('ORDENAR AQUÍ', W / 2, btnY + 88);
+    ctx.fillText('ORDENAR AQUÍ', W / 2, btnY + 68);
 
     // ── DELIVERY GRATIS ──
     ctx.fillStyle = '#E4A84B';
-    ctx.font = 'bold 52px Georgia, serif';
-    ctx.fillText('🚚  DELIVERY GRATIS', W / 2, btnY + 190);
+    ctx.font = 'bold 38px Georgia, serif';
+    ctx.fillText('🚚  DELIVERY GRATIS', W / 2, btnY + 148);
 
-    // ── DATOS DE CONTACTO ──
-    const infoY = btnY + 270;
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    roundRect(ctx, 60, infoY, W - 120, 160, 20);
+    // ── INFO ──
+    const infoY = btnY + 200;
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    roundRect(ctx, 40, infoY, W - 80, 130, 16);
     ctx.fill();
 
     ctx.fillStyle = '#FAF6EF';
-    ctx.font = 'bold 38px sans-serif';
+    ctx.font = 'bold 30px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`📞 WhatsApp: ${phone}`, W / 2, infoY + 60);
+    ctx.fillText(`📞 WhatsApp: ${phone}`, W / 2, infoY + 48);
     ctx.fillStyle = '#E4A84B';
-    ctx.font = '34px sans-serif';
-    ctx.fillText(`🌐 ${storeUrl.replace('https://','').replace('http://','').split('/tienda')[0]}`, W / 2, infoY + 115);
+    ctx.font = '26px sans-serif';
+    ctx.fillText(`🌐 ${storeUrl}`, W / 2, infoY + 92);
 
-    // ── MARCA INFERIOR ──
+    // ── MARCA ──
     ctx.fillStyle = '#E4A84B';
-    ctx.font = 'bold 44px Georgia, serif';
+    ctx.font = 'bold 32px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`🍞 ${storeName} — Delicias Artesanales`, W / 2, H - 50);
+    ctx.fillText(`🍞 ${storeName} — Delicias Artesanales`, W / 2, H - 30);
 
-    // Mostrar preview
     document.getElementById('flyerPreview').src = canvas.toDataURL('image/png');
   };
 
-  if (p.img && (p.img.startsWith('http') || p.img.startsWith('data:'))) {
+  if (p.img) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload  = () => draw(img);
     img.onerror = () => draw(null);
-    img.src = p.img;
-  } else if (p.img) {
-    const img = new Image();
-    img.onload  = () => draw(img);
-    img.onerror = () => draw(null);
-    img.src = p.img;
+    img.src = resolveImg(p.img);
   } else {
     draw(null);
   }
