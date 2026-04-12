@@ -784,6 +784,24 @@ header {
   text-align: center;
 }
 
+.yape-qr-wrap {
+  background: #6B21A8;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.yape-qr-img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  border-radius: 10px;
+  display: block;
+}
+
 .yape-number {
   font-size: 1.4rem;
   font-weight: 700;
