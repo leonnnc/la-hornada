@@ -185,12 +185,40 @@
         </div>
       </div>
 
-      <!-- PASO 3: Éxito -->
+      <!-- PASO 3: Esperando confirmación (solo Yape) -->
+      <div id="step-waiting" style="display:none">
+        <div class="waiting-anim">
+          <div class="waiting-ring"></div>
+          <div class="waiting-icon">📱</div>
+        </div>
+        <h3 style="margin-top:20px">Esperando confirmación</h3>
+        <p style="margin-top:10px;color:var(--text-muted);font-size:0.9rem;line-height:1.6">
+          Tu pedido fue enviado por WhatsApp.<br>
+          Estamos verificando tu Yape al <strong>975 524 363</strong>.<br>
+          Esta pantalla se actualizará automáticamente. 🔄
+        </p>
+        <div class="waiting-status">⏳ Pendiente de confirmación...</div>
+      </div>
+
+      <!-- PASO 4: Pago confirmado -->
+      <div id="step-confirmed" style="display:none">
+        <div class="confirmed-anim">✅</div>
+        <h3 style="margin-top:16px;color:#27ae60">¡Pago confirmado!</h3>
+        <p style="margin-top:10px;color:var(--text-muted);font-size:0.9rem;line-height:1.6">
+          Tu pago fue verificado con éxito.<br>
+          Estamos preparando tu pedido con todo el cariño. 🍞<br><br>
+          <strong>¡Gracias por tu compra!</strong><br>
+          Esperamos verte pronto de nuevo. ❤️
+        </p>
+        <button class="modal-close" onclick="closeCheckout()" style="margin-top:24px">¡Genial, hasta pronto!</button>
+      </div>
+
+      <!-- PASO 3b: Éxito efectivo -->
       <div id="step-success" style="display:none">
         <div class="modal-icon">🎉</div>
-        <h3>¡Pedido enviado!</h3>
-        <p id="successMsg">Tu pedido ha sido recibido. Lo prepararemos con todo el cariño.<br>Pronto nos ponemos en contacto contigo. ¡Gracias!</p>
-        <button class="modal-close" onclick="closeCheckout()">¡Genial, gracias!</button>
+        <h3>¡Pedido recibido!</h3>
+        <p id="successMsg"></p>
+        <button class="modal-close" onclick="closeCheckout()" style="margin-top:24px">¡Genial, gracias!</button>
       </div>
 
     </div>

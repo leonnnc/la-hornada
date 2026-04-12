@@ -738,6 +738,53 @@ header {
 
 .modal-close:hover { background: var(--rust); }
 
+/* ── PANTALLA DE ESPERA ── */
+.waiting-anim {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin: 10px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.waiting-ring {
+  position: absolute;
+  inset: 0;
+  border: 4px solid var(--warm);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.waiting-icon {
+  font-size: 2.4rem;
+  z-index: 1;
+}
+
+.waiting-status {
+  margin-top: 20px;
+  background: #fff8ee;
+  border: 1.5px solid var(--gold);
+  border-radius: 50px;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gold);
+  display: inline-block;
+}
+
+/* ── PANTALLA CONFIRMADO ── */
+.confirmed-anim {
+  font-size: 4rem;
+  animation: popIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* ── CHECKOUT MODAL ── */
 .checkout-modal {
   max-width: 480px;

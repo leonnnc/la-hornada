@@ -73,11 +73,22 @@ function fsOnProducts(callback) {
   });
 }
 
-/* ── Guardar pedido en Firestore ── */
+/* ── Guardar pedido en Firestore (retorna el ID) ── */
 async function fsSaveOrder(order) {
   const ordersCol = collection(db, 'orders');
   const ref = doc(ordersCol);
   await setDoc(ref, { ...order, id: ref.id, createdAt: Date.now() });
+  return ref.id;
+}
+
+/* ── Escuchar cambio de estado de un pedido específico ── */
+function fsWatchOrderStatus(orderId, callback) {
+  const ref = doc(db, 'orders', orderId);
+  return onSnapshot(ref, snap => {
+    if (snap.exists()) {
+      callback(snap.data().estado);
+    }
+  });
 }
 
 /* ── Escuchar pedidos en tiempo real ── */
@@ -122,5 +133,5 @@ export {
   db, fsGetProducts, fsSaveProduct, fsSaveAllProducts,
   fsDeleteProduct, fsDeductStock, fsOnProducts,
   fsInitIfEmpty, fsResetProducts, fsSaveOrder,
-  fsOnOrders, fsUpdateOrderStatus
+  fsOnOrders, fsUpdateOrderStatus, fsWatchOrderStatus
 };

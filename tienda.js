@@ -1,7 +1,7 @@
 /* =============================================
    LA HORNADA — Tienda JS (Firebase)
    ============================================= */
-import { fsGetProducts, fsDeductStock, fsOnProducts, fsInitIfEmpty, fsSaveOrder } from './firebase.js';
+import { fsGetProducts, fsDeductStock, fsOnProducts, fsInitIfEmpty, fsSaveOrder, fsWatchOrderStatus } from './firebase.js';
 
 /* ── STATE ── */
 let products = [];
@@ -296,7 +296,7 @@ window.placeOrder = async function() {
 
 /* ── CHECKOUT: navegación ── */
 function showCheckoutStep(step) {
-  ['payment','yape','contra','success'].forEach(s => {
+  ['payment','yape','contra','waiting','confirmed','success'].forEach(s => {
     document.getElementById(`step-${s}`).style.display = 'none';
   });
   document.getElementById(`step-${step}`).style.display = 'block';
@@ -371,8 +371,9 @@ window.submitOrder = async function(method) {
   }
 
   // Guardar en Firestore
+  let orderId = null;
   try {
-    await fsSaveOrder({
+    orderId = await fsSaveOrder({
       nombre, telefono,
       direccion: direccion || '—',
       metodoPago: method,
@@ -388,13 +389,21 @@ window.submitOrder = async function(method) {
   const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
   window.open(waUrl, '_blank');
 
-  // Mostrar éxito
-  const successText = method === 'yape'
-    ? `¡Gracias ${nombre}! Se abrió WhatsApp con tu pedido. Recuerda yapear S/ ${pendingTotal.toFixed(2)} al 975 524 363 para confirmar tu envío. 🎉`
-    : `¡Gracias ${nombre}! Se abrió WhatsApp con tu pedido. Te contactaremos al ${telefono} para coordinar la entrega. 🎉`;
-
-  document.getElementById('successMsg').textContent = successText;
-  showCheckoutStep('success');
+  if (method === 'yape') {
+    // Mostrar pantalla de espera y escuchar confirmación en tiempo real
+    showCheckoutStep('waiting');
+    if (orderId) {
+      fsWatchOrderStatus(orderId, (estado) => {
+        if (estado === 'pagado') {
+          showCheckoutStep('confirmed');
+        }
+      });
+    }
+  } else {
+    const successText = `¡Gracias ${nombre}! Tu pedido fue enviado por WhatsApp. Te contactaremos al ${telefono} para coordinar la entrega. 🎉`;
+    document.getElementById('successMsg').textContent = successText;
+    showCheckoutStep('success');
+  }
 
   if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar pedido'; }
 };
