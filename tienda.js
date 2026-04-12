@@ -4,7 +4,8 @@
 
 /* ── STATE ── */
 let products = [];
-let cart = {};
+let cart     = {};      // { id: qty }  pedidos normales
+let preorder = {};      // { id: qty }  solicitudes para mañana
 
 /* ── SANITIZAR (prevenir XSS) ── */
 function esc(str) {
@@ -19,13 +20,18 @@ function getProducts() {
   return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
 }
 
+/* ── STOCK DISPONIBLE (descontando lo que ya está en carrito) ── */
+function stockDisponible(p) {
+  const stock = p.stock ?? 99; // si no tiene campo stock, ilimitado
+  const enCarrito = cart[p.id] || 0;
+  return Math.max(0, stock - enCarrito);
+}
+
 /* ── CONFIGURACIÓN DE TIENDA ── */
 function applyStoreSettings() {
   const s = localStorage.getItem('lahornada_settings');
   if (!s) return;
   const cfg = JSON.parse(s);
-
-  // Actualizar footer con datos de configuración
   const footer = document.querySelector('footer');
   if (footer) {
     const name  = cfg.name  || 'La Hornada';
@@ -37,12 +43,9 @@ function applyStoreSettings() {
       📍 ${esc(addr)} &nbsp;|&nbsp; 📞 ${esc(phone)} &nbsp;|&nbsp; 🕐 ${esc(hours)}
     `;
   }
-
-  // Actualizar título del logo si hay nombre configurado
   if (cfg.name) {
     const logoEl = document.querySelector('.logo');
     if (logoEl) {
-      // Preservar el span de subtítulo
       const span = logoEl.querySelector('span');
       logoEl.childNodes[0].textContent = cfg.name + ' ';
       if (span) logoEl.appendChild(span);
@@ -51,21 +54,25 @@ function applyStoreSettings() {
 }
 
 /* ── RESOLVER URL DE IMAGEN ── */
-// Acepta rutas locales (img/foto.jpg) y URLs externas (https://...)
 function resolveImg(img) {
   if (!img) return 'img/placeholder.svg';
-  // Si es base64 o URL externa, usarla tal cual
-  if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) {
-    return img;
-  }
-  // Ruta local relativa al hosting
+  if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) return img;
   return img;
+}
+
+/* ── BADGE DE STOCK ── */
+function stockBadge(p) {
+  const s = p.stock ?? 99;
+  if (s === 0)  return `<span class="stock-badge out">Sin stock</span>`;
+  if (s <= 3)   return `<span class="stock-badge low">¡Solo ${s} disponibles!</span>`;
+  if (s <= 10)  return `<span class="stock-badge ok">${s} disponibles</span>`;
+  return `<span class="stock-badge plenty">En stock</span>`;
 }
 
 /* ── RENDER PRODUCTS ── */
 function renderProducts() {
   products = getProducts();
-  const grid = document.getElementById('productsGrid');
+  const grid    = document.getElementById('productsGrid');
   const visible = products.filter(p => p.available !== false);
 
   if (visible.length === 0) {
@@ -78,25 +85,28 @@ function renderProducts() {
   }
 
   grid.innerHTML = visible.map(p => {
-    const imgSrc = resolveImg(p.img);
+    const imgSrc  = resolveImg(p.img);
+    const sinStock = (p.stock ?? 99) === 0;
     return `
-    <div class="product-card">
+    <div class="product-card ${sinStock ? 'out-of-stock' : ''}">
       <div class="product-img">
-        <img
-          src="${imgSrc}"
-          alt="${esc(p.name)}"
-          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
-        >
+        <img src="${imgSrc}" alt="${esc(p.name)}"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
         <div class="emoji-fallback" style="display:none">${p.emoji}</div>
+        ${sinStock ? '<div class="stock-overlay">Sin stock hoy</div>' : ''}
       </div>
       <div class="product-body">
         <div class="product-name">${esc(p.name)}</div>
         <div class="product-desc">${esc(p.desc)}</div>
+        <div class="stock-row">${stockBadge(p)}</div>
         <div class="product-footer">
           <div class="product-price">
             S/ ${Number(p.price).toFixed(2)}<span> / unidad</span>
           </div>
-          <button class="add-btn" onclick="addToCart(${p.id})">+ Agregar</button>
+          ${sinStock
+            ? `<button class="preorder-btn" onclick="addPreorder(${p.id})">📅 Pedir para mañana</button>`
+            : `<button class="add-btn" onclick="addToCart(${p.id})">+ Agregar</button>`
+          }
         </div>
       </div>
     </div>`;
@@ -105,13 +115,31 @@ function renderProducts() {
 
 /* ── CART: ADD ── */
 function addToCart(id) {
+  const p = products.find(x => x.id === id);
+  const disponible = stockDisponible(p);
+  if (disponible <= 0) {
+    showToast(`⚠️ No hay más stock de ${p.name}`);
+    return;
+  }
   if (!cart[id]) cart[id] = 0;
   cart[id]++;
   updateCartUI();
+  renderProducts(); // refrescar badges de stock
 
-  const p = products.find(x => x.id === id);
   showToast(`✅ ${p.emoji} ${esc(p.name)} agregado`);
+  const badge = document.getElementById('cartBadge');
+  badge.classList.remove('bump');
+  void badge.offsetWidth;
+  badge.classList.add('bump');
+}
 
+/* ── PREORDER: ADD ── */
+function addPreorder(id) {
+  const p = products.find(x => x.id === id);
+  if (!preorder[id]) preorder[id] = 0;
+  preorder[id]++;
+  updateCartUI();
+  showToast(`📅 ${p.emoji} ${esc(p.name)} — solicitud para mañana agregada`);
   const badge = document.getElementById('cartBadge');
   badge.classList.remove('bump');
   void badge.offsetWidth;
@@ -119,29 +147,41 @@ function addToCart(id) {
 }
 
 /* ── CART: CHANGE QTY ── */
-function changeQty(id, delta) {
-  if (!cart[id]) return;
-  cart[id] += delta;
-  if (cart[id] <= 0) delete cart[id];
+function changeQty(id, delta, isPreorder) {
+  const obj = isPreorder ? preorder : cart;
+  if (!obj[id]) return;
+  obj[id] += delta;
+  if (obj[id] <= 0) delete obj[id];
+
+  if (!isPreorder) {
+    // Validar que no supere el stock
+    const p = products.find(x => x.id == id);
+    const maxStock = p.stock ?? 99;
+    if (cart[id] && cart[id] > maxStock) cart[id] = maxStock;
+    renderProducts();
+  }
   updateCartUI();
 }
 
 /* ── CART: REMOVE ── */
-function removeItem(id) {
-  delete cart[id];
+function removeItem(id, isPreorder) {
+  if (isPreorder) delete preorder[id];
+  else { delete cart[id]; renderProducts(); }
   updateCartUI();
 }
 
 /* ── CART: UPDATE UI ── */
 function updateCartUI() {
-  const total = Object.keys(cart).reduce((s, id) => s + cart[id], 0);
-  document.getElementById('cartBadge').textContent = total;
+  const totalCart     = Object.keys(cart).reduce((s, id) => s + cart[id], 0);
+  const totalPreorder = Object.keys(preorder).reduce((s, id) => s + preorder[id], 0);
+  document.getElementById('cartBadge').textContent = totalCart + totalPreorder;
 
   const itemsEl  = document.getElementById('cartItems');
   const footerEl = document.getElementById('cartFooter');
-  const keys     = Object.keys(cart);
+  const cartKeys     = Object.keys(cart);
+  const preorderKeys = Object.keys(preorder);
 
-  if (keys.length === 0) {
+  if (cartKeys.length === 0 && preorderKeys.length === 0) {
     itemsEl.innerHTML = `
       <div class="cart-empty">
         <div class="empty-icon">🍽️</div>
@@ -152,38 +192,71 @@ function updateCartUI() {
   }
 
   let subtotal = 0;
-  itemsEl.innerHTML = keys.map(id => {
-    const p   = products.find(x => x.id == id);
-    const qty = cart[id];
-    const sub = p.price * qty;
-    subtotal += sub;
-    const imgSrc = resolveImg(p.img);
+  let html = '';
 
-    // Mostrar imagen si carga bien, si no mostrar emoji
-    return `
-      <div class="cart-item">
-        <div class="cart-item-icon">
-          <img
-            src="${imgSrc}"
-            alt="${esc(p.name)}"
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
-          >
-          <span class="cart-item-emoji" style="display:none">${p.emoji}</span>
-        </div>
-        <div class="cart-item-info">
-          <div class="cart-item-name">${esc(p.name)}</div>
-          <div class="cart-item-price">S/ ${Number(p.price).toFixed(2)} c/u</div>
-          <div class="cart-item-controls">
-            <button class="qty-btn" onclick="changeQty(${id}, -1)">−</button>
-            <span class="qty-num">${qty}</span>
-            <button class="qty-btn" onclick="changeQty(${id}, 1)">+</button>
-            <button class="remove-btn" onclick="removeItem(${id})">✕ quitar</button>
+  // ── Pedidos normales ──
+  if (cartKeys.length > 0) {
+    html += `<div class="cart-section-label">🛒 Pedido de hoy</div>`;
+    html += cartKeys.map(id => {
+      const p   = products.find(x => x.id == id);
+      const qty = cart[id];
+      const sub = p.price * qty;
+      subtotal += sub;
+      const imgSrc = resolveImg(p.img);
+      return `
+        <div class="cart-item">
+          <div class="cart-item-icon">
+            <img src="${imgSrc}" alt="${esc(p.name)}"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <span class="cart-item-emoji" style="display:none">${p.emoji}</span>
           </div>
-        </div>
-        <div class="cart-item-total">S/ ${sub.toFixed(2)}</div>
-      </div>`;
-  }).join('');
+          <div class="cart-item-info">
+            <div class="cart-item-name">${esc(p.name)}</div>
+            <div class="cart-item-price">S/ ${Number(p.price).toFixed(2)} c/u</div>
+            <div class="cart-item-controls">
+              <button class="qty-btn" onclick="changeQty(${id}, -1, false)">−</button>
+              <span class="qty-num">${qty}</span>
+              <button class="qty-btn" onclick="changeQty(${id}, 1, false)">+</button>
+              <button class="remove-btn" onclick="removeItem(${id}, false)">✕ quitar</button>
+            </div>
+          </div>
+          <div class="cart-item-total">S/ ${sub.toFixed(2)}</div>
+        </div>`;
+    }).join('');
+  }
 
+  // ── Solicitudes para mañana ──
+  if (preorderKeys.length > 0) {
+    html += `<div class="cart-section-label preorder-label">📅 Solicitudes para mañana</div>`;
+    html += preorderKeys.map(id => {
+      const p   = products.find(x => x.id == id);
+      const qty = preorder[id];
+      const sub = p.price * qty;
+      subtotal += sub;
+      const imgSrc = resolveImg(p.img);
+      return `
+        <div class="cart-item preorder-item">
+          <div class="cart-item-icon">
+            <img src="${imgSrc}" alt="${esc(p.name)}"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <span class="cart-item-emoji" style="display:none">${p.emoji}</span>
+          </div>
+          <div class="cart-item-info">
+            <div class="cart-item-name">${esc(p.name)}</div>
+            <div class="cart-item-price">S/ ${Number(p.price).toFixed(2)} c/u · <span style="color:#C8862A">Para mañana</span></div>
+            <div class="cart-item-controls">
+              <button class="qty-btn" onclick="changeQty(${id}, -1, true)">−</button>
+              <span class="qty-num">${qty}</span>
+              <button class="qty-btn" onclick="changeQty(${id}, 1, true)">+</button>
+              <button class="remove-btn" onclick="removeItem(${id}, true)">✕ quitar</button>
+            </div>
+          </div>
+          <div class="cart-item-total">S/ ${sub.toFixed(2)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  itemsEl.innerHTML = html;
   document.getElementById('subtotalAmt').textContent = `S/ ${subtotal.toFixed(2)}`;
   document.getElementById('totalAmt').textContent    = `S/ ${subtotal.toFixed(2)}`;
   footerEl.style.display = 'block';
@@ -194,12 +267,10 @@ function openCart() {
   document.getElementById('cartOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-
 function closeCart() {
   document.getElementById('cartOverlay').classList.remove('open');
   document.body.style.overflow = '';
 }
-
 function handleOverlayClick(e) {
   if (e.target === document.getElementById('cartOverlay')) closeCart();
 }
@@ -215,11 +286,12 @@ function showToast(msg) {
 /* ── ORDER ── */
 function placeOrder() {
   closeCart();
-  cart = {};
+  cart     = {};
+  preorder = {};
   updateCartUI();
+  renderProducts();
   document.getElementById('modalOverlay').classList.add('open');
 }
-
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
 }

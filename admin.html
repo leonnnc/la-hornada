@@ -97,6 +97,7 @@
                 <th>Producto</th>
                 <th>Descripción</th>
                 <th>Precio</th>
+                <th>Stock</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -158,6 +159,12 @@
           <label>Precio (S/)</label>
           <input type="number" id="f-price" min="0" step="0.50" placeholder="0.00">
         </div>
+      </div>
+
+      <!-- Stock -->
+      <div class="form-row" style="margin-top:16px">
+        <label>Stock disponible (unidades)</label>
+        <input type="number" id="f-stock" min="0" step="1" placeholder="0 = sin stock hoy">
       </div>
 
       <!-- Descripción -->

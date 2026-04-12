@@ -144,6 +144,19 @@ function renderTable() {
       <td><div class="prod-desc-cell">${esc(p.desc)}</div></td>
       <td><div class="prod-price">S/ ${Number(p.price).toFixed(2)}</div></td>
       <td>
+        <div class="stock-cell">
+          <input
+            type="number"
+            class="stock-input"
+            value="${p.stock ?? 0}"
+            min="0"
+            onchange="updateStock(${p.id}, this.value)"
+            title="Stock disponible"
+          >
+          <span class="stock-unit">uds</span>
+        </div>
+      </td>
+      <td>
         <div class="toggle-pill ${p.available !== false ? 'on' : 'off'}" onclick="toggleAvailable(${p.id})">
           <span class="on-label">✓ Activo</span>
           <span class="off-label">✗ Oculto</span>
@@ -214,6 +227,18 @@ function initDragAndDrop(tbody) {
 }
 
 /* ═══════════════════════════════════════
+   ACTUALIZAR STOCK DIRECTO DESDE TABLA
+═══════════════════════════════════════ */
+function updateStock(id, value) {
+  const products = getProducts();
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  p.stock = Math.max(0, parseInt(value) || 0);
+  saveProducts(products);
+  showToast(`📦 Stock de "${esc(p.name)}" actualizado a ${p.stock}`);
+}
+
+/* ═══════════════════════════════════════
    TOGGLE DISPONIBILIDAD
 ═══════════════════════════════════════ */
 function toggleAvailable(id) {
@@ -252,6 +277,7 @@ function openAddModal() {
   document.getElementById('modalTitle').textContent = '➕ Nuevo Producto';
   document.getElementById('f-name').value  = '';
   document.getElementById('f-price').value = '';
+  document.getElementById('f-stock').value = '0';
   document.getElementById('f-desc').value  = '';
   document.getElementById('f-img').value   = '';
   document.getElementById('f-avail-yes').checked = true;
@@ -269,6 +295,7 @@ function openEditModal(id) {
   document.getElementById('modalTitle').textContent   = '✏️ Editar Producto';
   document.getElementById('f-name').value  = p.name;
   document.getElementById('f-price').value = p.price;
+  document.getElementById('f-stock').value = p.stock ?? 0;
   document.getElementById('f-desc').value  = p.desc;
   document.getElementById('f-img').value   = p.img || '';
   document.getElementById(p.available !== false ? 'f-avail-yes' : 'f-avail-no').checked = true;
@@ -327,6 +354,7 @@ function handleFileUpload(event) {
 function saveProduct() {
   const name      = document.getElementById('f-name').value.trim();
   const price     = parseFloat(document.getElementById('f-price').value);
+  const stock     = Math.max(0, parseInt(document.getElementById('f-stock').value) || 0);
   const desc      = document.getElementById('f-desc').value.trim();
   const img       = document.getElementById('f-img').value.trim();
   const available = document.getElementById('f-avail-yes').checked;
@@ -339,10 +367,10 @@ function saveProduct() {
   if (editingId !== null) {
     const idx = products.findIndex(x => x.id === editingId);
     if (idx > -1) {
-      products[idx] = { ...products[idx], name, price, desc, img, emoji: selectedEmoji, available };
+      products[idx] = { ...products[idx], name, price, stock, desc, img, emoji: selectedEmoji, available };
     }
   } else {
-    products.push({ id: nextId(products), name, price, desc, img, emoji: selectedEmoji, available });
+    products.push({ id: nextId(products), name, price, stock, desc, img, emoji: selectedEmoji, available });
   }
 
   saveProducts(products);

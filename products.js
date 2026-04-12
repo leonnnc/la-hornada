@@ -1,6 +1,7 @@
 /* =============================================
    LA HORNADA — Productos por defecto (compartido)
    Usado por tienda.js y admin.js
+   stock: número de unidades disponibles (0 = sin stock)
    ============================================= */
 
 const DEFAULT_PRODUCTS = [
@@ -11,7 +12,8 @@ const DEFAULT_PRODUCTS = [
     price: 3.50,
     emoji: "🥟",
     img: "img/empanadas-carne.jpg",
-    available: true
+    available: true,
+    stock: 10
   },
   {
     id: 2,
@@ -20,7 +22,8 @@ const DEFAULT_PRODUCTS = [
     price: 3.50,
     emoji: "🥟",
     img: "img/empanadas-pollo.jpg",
-    available: true
+    available: true,
+    stock: 8
   },
   {
     id: 3,
@@ -29,7 +32,8 @@ const DEFAULT_PRODUCTS = [
     price: 5.00,
     emoji: "🍩",
     img: "img/churros.jpg",
-    available: true
+    available: true,
+    stock: 0
   },
   {
     id: 4,
@@ -38,7 +42,8 @@ const DEFAULT_PRODUCTS = [
     price: 8.00,
     emoji: "🥧",
     img: "img/pie-manzana.jpg",
-    available: true
+    available: true,
+    stock: 5
   },
   {
     id: 5,
@@ -47,7 +52,8 @@ const DEFAULT_PRODUCTS = [
     price: 6.50,
     emoji: "🍮",
     img: "img/leche-asada.jpg",
-    available: true
+    available: true,
+    stock: 0
   },
   {
     id: 6,
@@ -56,7 +62,8 @@ const DEFAULT_PRODUCTS = [
     price: 2.50,
     emoji: "🌀",
     img: "img/orejas.jpg",
-    available: true
+    available: true,
+    stock: 15
   },
   {
     id: 7,
@@ -65,7 +72,8 @@ const DEFAULT_PRODUCTS = [
     price: 3.00,
     emoji: "🍪",
     img: "img/alfajores.jpg",
-    available: true
+    available: true,
+    stock: 12
   },
   {
     id: 8,
@@ -74,6 +82,7 @@ const DEFAULT_PRODUCTS = [
     price: 9.00,
     emoji: "🎂",
     img: "img/torta-chocolate.jpg",
-    available: true
+    available: true,
+    stock: 3
   }
 ];
