@@ -285,11 +285,24 @@ function showToast(msg) {
 
 /* ── ORDER ── */
 function placeOrder() {
+  // Descontar stock de los productos pedidos hoy
+  const saved = localStorage.getItem('lahornada_products');
+  const prods = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+
+  Object.keys(cart).forEach(id => {
+    const p = prods.find(x => x.id == id);
+    if (p && p.stock !== undefined) {
+      p.stock = Math.max(0, p.stock - cart[id]);
+    }
+  });
+
+  localStorage.setItem('lahornada_products', JSON.stringify(prods));
+
   closeCart();
   cart     = {};
   preorder = {};
   updateCartUI();
-  renderProducts();
+  renderProducts(); // refrescar badges con el nuevo stock
   document.getElementById('modalOverlay').classList.add('open');
 }
 function closeModal() {
