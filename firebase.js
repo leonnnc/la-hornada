@@ -75,9 +75,51 @@ function fsOnProducts(callback) {
 
 /* ── Guardar pedido en Firestore (retorna el ID) ── */
 async function fsSaveOrder(order) {
+  // 1. Obtener y actualizar contador global de pedidos
+  const counterRef = doc(db, 'meta', 'orderCounter');
+  const counterSnap = await getDoc(counterRef);
+  let nextNum = 1;
+  if (counterSnap.exists()) {
+    nextNum = (counterSnap.data().count || 0) + 1;
+  }
+  await setDoc(counterRef, { count: nextNum });
+  const codigoPedido = String(nextNum).padStart(4, '0'); // "0001"
+
+  // 2. Obtener o crear código de cliente por teléfono
+  const tel = (order.telefono || '').replace(/\s/g, '');
+  const clienteRef = doc(db, 'clientes', tel);
+  const clienteSnap = await getDoc(clienteRef);
+  let codigoCliente;
+  if (clienteSnap.exists()) {
+    codigoCliente = clienteSnap.data().codigo;
+  } else {
+    // Generar código único basado en teléfono
+    codigoCliente = 'CLI-' + tel.slice(-4);
+    await setDoc(clienteRef, {
+      codigo: codigoCliente,
+      telefono: tel,
+      nombre: order.nombre,
+      primerPedido: Date.now(),
+      totalPedidos: 0
+    });
+  }
+  // Incrementar total de pedidos del cliente
+  await updateDoc(clienteRef, {
+    totalPedidos: (clienteSnap.exists() ? (clienteSnap.data().totalPedidos || 0) : 0) + 1,
+    ultimoPedido: Date.now()
+  });
+
+  // 3. Guardar pedido con códigos
   const ordersCol = collection(db, 'orders');
   const ref = doc(ordersCol);
-  await setDoc(ref, { ...order, id: ref.id, createdAt: Date.now() });
+  await setDoc(ref, {
+    ...order,
+    id: ref.id,
+    codigoPedido,
+    codigoCliente,
+    archivado: false,
+    createdAt: Date.now()
+  });
   return ref.id;
 }
 
@@ -91,20 +133,41 @@ function fsWatchOrderStatus(orderId, callback) {
   });
 }
 
-/* ── Escuchar pedidos en tiempo real ── */
+/* ── Actualizar estado de un pedido (archiva si es entregado) ── */
+async function fsUpdateOrderStatus(id, status) {
+  const ref = doc(db, 'orders', id);
+  const updates = { estado: status };
+  if (status === 'entregado') {
+    updates.archivado    = false; // queda visible hasta que admin archive
+    updates.entregadoAt  = Date.now();
+  }
+  await updateDoc(ref, updates);
+}
+
+/* ── Archivar pedido manualmente ── */
+async function fsArchivarPedido(id) {
+  const ref = doc(db, 'orders', id);
+  await updateDoc(ref, { archivado: true, archivadoAt: Date.now() });
+}
+
+/* ── Escuchar pedidos activos (no archivados) ── */
 function fsOnOrders(callback) {
   const ordersCol = collection(db, 'orders');
   return onSnapshot(ordersCol, snap => {
-    const list = snap.docs.map(d => d.data());
+    const list = snap.docs.map(d => d.data()).filter(o => !o.archivado);
     list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     callback(list);
   });
 }
 
-/* ── Actualizar estado de un pedido ── */
-async function fsUpdateOrderStatus(id, status) {
-  const ref = doc(db, 'orders', id);
-  await updateDoc(ref, { estado: status });
+/* ── Escuchar pedidos archivados ── */
+function fsOnArchivedOrders(callback) {
+  const ordersCol = collection(db, 'orders');
+  return onSnapshot(ordersCol, snap => {
+    const list = snap.docs.map(d => d.data()).filter(o => o.archivado);
+    list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    callback(list);
+  });
 }
 
 /* ── Inicializar Firestore con productos por defecto si está vacío ── */
@@ -133,5 +196,6 @@ export {
   db, fsGetProducts, fsSaveProduct, fsSaveAllProducts,
   fsDeleteProduct, fsDeductStock, fsOnProducts,
   fsInitIfEmpty, fsResetProducts, fsSaveOrder,
-  fsOnOrders, fsUpdateOrderStatus, fsWatchOrderStatus
+  fsOnOrders, fsOnArchivedOrders, fsUpdateOrderStatus,
+  fsWatchOrderStatus, fsArchivarPedido
 };

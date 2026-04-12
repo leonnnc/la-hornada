@@ -627,6 +627,76 @@ body {
 
 .status-select:focus { border-color: var(--gold); }
 
+/* ── CÓDIGOS DE PEDIDO Y CLIENTE ── */
+.order-codes {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.order-code-pedido {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(228,168,75,0.12);
+  border: 1px solid rgba(228,168,75,0.3);
+  border-radius: 6px;
+  padding: 2px 8px;
+  letter-spacing: 1px;
+}
+
+.order-code-cliente {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  letter-spacing: 0.5px;
+}
+
+/* ── ARCHIVADOS ── */
+.order-archived { opacity: 0.65; }
+
+.archived-section { margin-top: 28px; }
+
+.archived-toggle {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.archived-toggle:hover { border-color: var(--gold); color: var(--text); }
+
+.toggle-arrow { font-size: 0.75rem; }
+
+.archived-list { margin-top: 10px; }
+
+.btn-archivar {
+  background: rgba(107,33,168,0.12) !important;
+  border-color: rgba(107,33,168,0.4) !important;
+  color: #a855f7 !important;
+}
+
+.btn-archivar:hover {
+  background: rgba(107,33,168,0.25) !important;
+}
+
 /* ── STATUS BUTTONS ── */
 .status-btns {
   display: flex;

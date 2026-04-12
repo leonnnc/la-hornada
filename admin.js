@@ -4,7 +4,8 @@
 import {
   fsGetProducts, fsSaveProduct, fsSaveAllProducts,
   fsDeleteProduct, fsOnProducts, fsInitIfEmpty,
-  fsResetProducts, fsOnOrders, fsUpdateOrderStatus
+  fsResetProducts, fsOnOrders, fsOnArchivedOrders,
+  fsUpdateOrderStatus, fsArchivarPedido
 } from './firebase.js';
 
 /* ── CREDENCIALES ── */
@@ -73,6 +74,7 @@ const EMOJIS = ['🥟','🍩','🥧','🍮','🌀','🍪','🎂','🥐','🧁','
 /* ── STATE ── */
 let products      = [];
 let allOrders     = [];
+let archivedOrders = [];
 let currentFilter = 'all';
 let currentDate   = '';
 let editingId     = null;
@@ -153,11 +155,16 @@ async function initAdmin() {
     products = list;
     renderAll();
   });
-  // Escuchar pedidos en tiempo real
+  // Escuchar pedidos activos en tiempo real
   fsOnOrders(orders => {
     allOrders = orders;
     renderOrders();
     updatePendingBadge();
+  });
+  // Escuchar pedidos archivados
+  fsOnArchivedOrders(orders => {
+    archivedOrders = orders;
+    renderOrders(); // re-render para actualizar sección archivo
   });
 }
 
@@ -601,21 +608,42 @@ function renderOrders() {
         ${orders.map(o => orderCard(o)).join('')}
       </div>`;
   }).join('');
+
+  // Sección archivados (colapsable)
+  if (archivedOrders.length > 0) {
+    const archivedTotal = archivedOrders.reduce((s, o) => s + (o.total || 0), 0);
+    container.innerHTML += `
+      <div class="archived-section">
+        <button class="archived-toggle" onclick="toggleArchived(this)">
+          📁 Pedidos archivados (${archivedOrders.length}) — S/ ${archivedTotal.toFixed(2)}
+          <span class="toggle-arrow">▼</span>
+        </button>
+        <div class="archived-list" style="display:none">
+          ${archivedOrders.map(o => orderCard(o, true)).join('')}
+        </div>
+      </div>`;
+  }
 }
 
-function orderCard(o) {
+function orderCard(o, isArchived = false) {
   const estadoMap = {
-    pendiente_confirmacion: { label: '⏳ Pendiente Yape',  cls: 'status-pending' },
-    pendiente_envio:        { label: '🚚 Por enviar',       cls: 'status-shipping' },
-    entregado:              { label: '✅ Entregado',         cls: 'status-done' },
+    pendiente_confirmacion: { label: '⏳ Pendiente Yape',   cls: 'status-pending' },
+    pagado:                 { label: '✅ Pago confirmado',   cls: 'status-paid' },
+    pendiente_envio:        { label: '📦 Por enviar',        cls: 'status-shipping' },
+    en_camino:              { label: '🛵 En camino',         cls: 'status-shipping' },
+    entregado:              { label: '✅ Entregado',          cls: 'status-done' },
   };
-  const est = estadoMap[o.estado] || { label: o.estado, cls: '' };
+  const est  = estadoMap[o.estado] || { label: o.estado, cls: '' };
   const hora = new Date(o.createdAt).toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
 
   return `
-    <div class="order-card">
+    <div class="order-card ${isArchived ? 'order-archived' : ''}">
       <div class="order-card-header">
         <div class="order-client">
+          <div class="order-codes">
+            <span class="order-code-pedido">#${o.codigoPedido || '????'}</span>
+            <span class="order-code-cliente">${o.codigoCliente || ''}</span>
+          </div>
           <span class="order-name">👤 ${esc(o.nombre)}</span>
           <span class="order-phone">📞 ${esc(o.telefono)}</span>
           ${o.direccion && o.direccion !== '—' ? `<span class="order-addr">📍 ${esc(o.direccion)}</span>` : ''}
@@ -623,7 +651,7 @@ function orderCard(o) {
         <div class="order-meta">
           <span class="order-time">🕐 ${hora}</span>
           <span class="order-pay ${o.metodoPago === 'yape' ? 'pay-yape' : 'pay-contra'}">
-            ${o.metodoPago === 'yape' ? '📱 Yape' : '💵 Contraentrega'}
+            ${o.metodoPago === 'yape' ? '📱 Yape' : '💵 Efectivo'}
           </span>
           ${o.yapeDe && o.yapeDe !== '—' ? `<span class="order-yape-from">desde ${esc(o.yapeDe)}</span>` : ''}
         </div>
@@ -631,19 +659,25 @@ function orderCard(o) {
       <div class="order-items">${esc(o.items || '').replace(/\n/g, '<br>')}</div>
       <div class="order-card-footer">
         <span class="order-total">S/ ${Number(o.total || 0).toFixed(2)}</span>
-        <div class="order-status-group">
-          <span class="order-status ${est.cls}">${est.label}</span>
-          <div class="status-btns">
-            <button class="status-btn ${o.estado==='pendiente_confirmacion'?'active-pending':''}"
-              onclick="changeOrderStatus('${o.id}','pendiente_confirmacion')">⏳ Pendiente Yape</button>
-            <button class="status-btn ${o.estado==='pagado'?'active-paid':''}"
-              onclick="changeOrderStatus('${o.id}','pagado')">✅ Pago confirmado</button>
-            <button class="status-btn ${o.estado==='pendiente_envio'||o.estado==='en_camino'?'active-shipping':''}"
-              onclick="changeOrderStatus('${o.id}','pendiente_envio')">🚚 Por enviar</button>
-            <button class="status-btn ${o.estado==='entregado'?'active-done':''}"
-              onclick="changeOrderStatus('${o.id}','entregado')">📦 Entregado</button>
-          </div>
-        </div>
+        ${isArchived
+          ? `<span class="order-status status-done">📁 Archivado</span>`
+          : `<div class="order-status-group">
+              <span class="order-status ${est.cls}">${est.label}</span>
+              <div class="status-btns">
+                <button class="status-btn ${o.estado==='pendiente_confirmacion'?'active-pending':''}"
+                  onclick="changeOrderStatus('${o.id}','pendiente_confirmacion')">⏳ Pendiente Yape</button>
+                <button class="status-btn ${o.estado==='pagado'?'active-paid':''}"
+                  onclick="changeOrderStatus('${o.id}','pagado')">✅ Pago confirmado</button>
+                <button class="status-btn ${o.estado==='pendiente_envio'||o.estado==='en_camino'?'active-shipping':''}"
+                  onclick="changeOrderStatus('${o.id}','pendiente_envio')">🚚 Por enviar</button>
+                <button class="status-btn ${o.estado==='entregado'?'active-done':''}"
+                  onclick="changeOrderStatus('${o.id}','entregado')">📦 Entregado</button>
+                ${o.estado === 'entregado'
+                  ? `<button class="status-btn btn-archivar" onclick="archivarPedido('${o.id}')">📁 Archivar</button>`
+                  : ''}
+              </div>
+            </div>`
+        }
       </div>
     </div>`;
 }
@@ -663,6 +697,19 @@ window.filterByDate = function(val) {
 window.changeOrderStatus = async function(id, newStatus) {
   await fsUpdateOrderStatus(id, newStatus);
   showToast(`✅ Estado actualizado`);
+};
+
+window.archivarPedido = async function(id) {
+  await fsArchivarPedido(id);
+  showToast('📁 Pedido archivado');
+};
+
+window.toggleArchived = function(btn) {
+  const list = btn.nextElementSibling;
+  const arrow = btn.querySelector('.toggle-arrow');
+  const visible = list.style.display !== 'none';
+  list.style.display = visible ? 'none' : 'block';
+  arrow.textContent = visible ? '▼' : '▲';
 };
 
 /* ═══════════════════════════════════════
