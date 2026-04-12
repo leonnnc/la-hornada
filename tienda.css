@@ -804,6 +804,25 @@ header {
   border-radius: 10px;
 }
 
+.pay-opt-yape-wrap {
+  width: 72px;
+  height: 72px;
+  background: #6B21A8;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(107,33,168,0.35);
+}
+
+.pay-opt-img-yape {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+}
+
 .yape-info {
   background: #f0faf4;
   border: 1.5px solid #2ecc71;
