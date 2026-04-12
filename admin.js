@@ -1,83 +1,81 @@
 /* =============================================
-   LA HORNADA — Admin Panel JS
+   LA HORNADA — Admin Panel JS (Firebase)
    ============================================= */
+import {
+  fsGetProducts, fsSaveProduct, fsSaveAllProducts,
+  fsDeleteProduct, fsOnProducts, fsInitIfEmpty
+} from './firebase.js';
 
 /* ── CREDENCIALES ── */
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = '1234';
 
-/* ── EMOJIS DISPONIBLES ── */
+/* ── EMOJIS ── */
 const EMOJIS = ['🥟','🍩','🥧','🍮','🌀','🍪','🎂','🥐','🧁','🍞','🥖','🧇','🥞','🍰','🫓','🥨','🍡','🧆'];
 
 /* ── STATE ── */
-let editingId  = null;
-let deletingId = null;
+let products      = [];
+let editingId     = null;
+let deletingId    = null;
 let selectedEmoji = '🥟';
 
-/* ── SANITIZAR (prevenir XSS) ── */
+/* ── SANITIZAR ── */
 function esc(str) {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
 }
 
-/* ── RESOLVER URL DE IMAGEN ── */
+/* ── RESOLVER IMAGEN ── */
 function resolveImg(img) {
   if (!img) return '';
-  if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) {
-    return img;
-  }
-  return img; // ruta local: img/foto.jpg
+  if (img.startsWith('data:') || img.startsWith('http://') || img.startsWith('https://')) return img;
+  return img;
 }
 
 /* ═══════════════════════════════════════
    AUTH
 ═══════════════════════════════════════ */
-function doLogin() {
+window.doLogin = function() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
-
   if (u === ADMIN_USER && p === ADMIN_PASS) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminUI').style.display    = 'block';
     loadSettings();
-    renderAll();
+    initAdmin();
   } else {
     document.getElementById('loginError').style.display = 'block';
   }
-}
+};
 
-function doLogout() {
+window.doLogout = function() {
   document.getElementById('adminUI').style.display    = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginPass').value = '';
-}
+};
 
 /* ═══════════════════════════════════════
-   STORAGE
+   INIT ADMIN
 ═══════════════════════════════════════ */
-function getProducts() {
-  const s = localStorage.getItem('lahornada_products');
-  return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
-}
-
-function saveProducts(arr) {
-  localStorage.setItem('lahornada_products', JSON.stringify(arr));
-}
-
-function nextId(arr) {
-  return arr.length > 0 ? Math.max(...arr.map(p => p.id)) + 1 : 1;
+async function initAdmin() {
+  await fsInitIfEmpty();
+  // Escuchar cambios en tiempo real
+  fsOnProducts(list => {
+    products = list;
+    renderAll();
+  });
 }
 
 /* ═══════════════════════════════════════
    SECTIONS / NAV
 ═══════════════════════════════════════ */
-function showSection(name, el) {
+window.showSection = function(name, el) {
   document.querySelectorAll('[id^="section-"]').forEach(s => s.style.display = 'none');
   document.getElementById('section-' + name).style.display = 'block';
   document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
   if (el) el.classList.add('active');
-}
+};
 
 /* ═══════════════════════════════════════
    RENDER
@@ -88,7 +86,6 @@ function renderAll() {
 }
 
 function renderStats() {
-  const products  = getProducts();
   const available = products.filter(p => p.available !== false).length;
   const total     = products.length;
   const minPrice  = total > 0 ? Math.min(...products.map(p => p.price)) : 0;
@@ -119,7 +116,6 @@ function renderStats() {
 }
 
 function renderTable() {
-  const products = getProducts();
   const tbody = document.getElementById('productsTableBody');
   tbody.innerHTML = products.map(p => {
     const imgSrc = resolveImg(p.img);
@@ -145,14 +141,8 @@ function renderTable() {
       <td><div class="prod-price">S/ ${Number(p.price).toFixed(2)}</div></td>
       <td>
         <div class="stock-cell">
-          <input
-            type="number"
-            class="stock-input"
-            value="${p.stock ?? 0}"
-            min="0"
-            onchange="updateStock(${p.id}, this.value)"
-            title="Stock disponible"
-          >
+          <input type="number" class="stock-input" value="${p.stock ?? 0}" min="0"
+            onchange="updateStock(${p.id}, this.value)" title="Stock disponible">
           <span class="stock-unit">uds</span>
         </div>
       </td>
@@ -175,7 +165,7 @@ function renderTable() {
 }
 
 /* ═══════════════════════════════════════
-   DRAG & DROP — reordenar filas
+   DRAG & DROP
 ═══════════════════════════════════════ */
 function initDragAndDrop(tbody) {
   let dragSrc = null;
@@ -187,71 +177,64 @@ function initDragAndDrop(tbody) {
       e.dataTransfer.effectAllowed = 'move';
     });
 
-    row.addEventListener('dragend', () => {
+    row.addEventListener('dragend', async () => {
       row.classList.remove('dragging');
       tbody.querySelectorAll('.prod-row').forEach(r => r.classList.remove('drag-over'));
-      // Guardar nuevo orden
-      const newOrder = [...tbody.querySelectorAll('.prod-row')].map(r => parseInt(r.dataset.id));
-      const products = getProducts();
-      const reordered = newOrder.map(id => products.find(p => p.id === id)).filter(Boolean);
-      saveProducts(reordered);
-      renderStats();
+      // Guardar nuevo orden en Firestore
+      const newOrder = [...tbody.querySelectorAll('.prod-row')].map((r, i) => ({
+        id: parseInt(r.dataset.id), order: i
+      }));
+      const updated = products.map(p => {
+        const o = newOrder.find(x => x.id === p.id);
+        return o ? { ...p, order: o.order } : p;
+      });
+      await fsSaveAllProducts(updated);
     });
 
     row.addEventListener('dragover', e => {
       e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
       if (row === dragSrc) return;
       tbody.querySelectorAll('.prod-row').forEach(r => r.classList.remove('drag-over'));
       row.classList.add('drag-over');
     });
 
-    row.addEventListener('dragleave', () => {
-      row.classList.remove('drag-over');
-    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
 
     row.addEventListener('drop', e => {
       e.preventDefault();
       if (!dragSrc || dragSrc === row) return;
-      // Insertar antes o después según posición del cursor
       const rect = row.getBoundingClientRect();
-      const mid  = rect.top + rect.height / 2;
-      if (e.clientY < mid) {
-        tbody.insertBefore(dragSrc, row);
-      } else {
-        tbody.insertBefore(dragSrc, row.nextSibling);
-      }
+      if (e.clientY < rect.top + rect.height / 2) tbody.insertBefore(dragSrc, row);
+      else tbody.insertBefore(dragSrc, row.nextSibling);
       row.classList.remove('drag-over');
     });
   });
 }
 
 /* ═══════════════════════════════════════
-   ACTUALIZAR STOCK DIRECTO DESDE TABLA
+   STOCK DIRECTO DESDE TABLA
 ═══════════════════════════════════════ */
-function updateStock(id, value) {
-  const products = getProducts();
+window.updateStock = async function(id, value) {
   const p = products.find(x => x.id === id);
   if (!p) return;
-  p.stock = Math.max(0, parseInt(value) || 0);
-  saveProducts(products);
-  showToast(`📦 Stock de "${esc(p.name)}" actualizado a ${p.stock}`);
-}
+  const newStock = Math.max(0, parseInt(value) || 0);
+  await fsSaveProduct({ ...p, stock: newStock });
+  showToast(`📦 Stock de "${esc(p.name)}" → ${newStock} uds`);
+};
 
 /* ═══════════════════════════════════════
    TOGGLE DISPONIBILIDAD
 ═══════════════════════════════════════ */
-function toggleAvailable(id) {
-  const products = getProducts();
+window.toggleAvailable = async function(id) {
   const p = products.find(x => x.id === id);
-  if (p) p.available = p.available === false ? true : false;
-  saveProducts(products);
-  renderAll();
-  showToast(p.available
+  if (!p) return;
+  const updated = { ...p, available: p.available === false ? true : false };
+  await fsSaveProduct(updated);
+  showToast(updated.available
     ? `✅ "${esc(p.name)}" ahora está disponible`
     : `⛔ "${esc(p.name)}" ocultado de la tienda`
   );
-}
+};
 
 /* ═══════════════════════════════════════
    EMOJI PICKER
@@ -263,18 +246,18 @@ function buildEmojiPicker(current) {
   ).join('');
 }
 
-function selectEmoji(e, el) {
+window.selectEmoji = function(e, el) {
   selectedEmoji = e;
   document.querySelectorAll('.emoji-opt').forEach(x => x.classList.remove('selected'));
   el.classList.add('selected');
-}
+};
 
 /* ═══════════════════════════════════════
    MODAL EDITAR / AGREGAR
 ═══════════════════════════════════════ */
-function openAddModal() {
+window.openAddModal = function() {
   editingId = null;
-  document.getElementById('modalTitle').textContent = '➕ Nuevo Producto';
+  document.getElementById('modalTitle').textContent  = '➕ Nuevo Producto';
   document.getElementById('f-name').value  = '';
   document.getElementById('f-price').value = '';
   document.getElementById('f-stock').value = '0';
@@ -284,15 +267,13 @@ function openAddModal() {
   buildEmojiPicker('🥟');
   updatePreview();
   document.getElementById('editModal').classList.add('open');
-}
+};
 
-function openEditModal(id) {
-  const products = getProducts();
+window.openEditModal = function(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
-
   editingId = id;
-  document.getElementById('modalTitle').textContent   = '✏️ Editar Producto';
+  document.getElementById('modalTitle').textContent  = '✏️ Editar Producto';
   document.getElementById('f-name').value  = p.name;
   document.getElementById('f-price').value = p.price;
   document.getElementById('f-stock').value = p.stock ?? 0;
@@ -302,56 +283,44 @@ function openEditModal(id) {
   buildEmojiPicker(p.emoji);
   updatePreview();
   document.getElementById('editModal').classList.add('open');
-}
+};
 
-function closeModal() {
+window.closeModal = function() {
   document.getElementById('editModal').classList.remove('open');
-}
+};
 
 /* ── IMAGE PREVIEW ── */
-function updatePreview() {
+window.updatePreview = function() {
   const url = document.getElementById('f-img').value.trim();
   const img = document.getElementById('imgPreview');
   const msg = document.getElementById('noImgMsg');
-
   if (url) {
     img.src = resolveImg(url);
     img.style.display = 'block';
     msg.style.display = 'none';
-    img.onerror = () => {
-      img.style.display = 'none';
-      msg.style.display = 'block';
-      msg.textContent = '⚠️ No se pudo cargar la imagen';
-    };
+    img.onerror = () => { img.style.display = 'none'; msg.style.display = 'block'; msg.textContent = '⚠️ No se pudo cargar'; };
   } else {
     img.style.display = 'none';
     msg.style.display = 'block';
     msg.textContent = 'Vista previa de la imagen';
   }
-}
+};
 
 /* ── FILE UPLOAD ── */
-function handleFileUpload(event) {
+window.handleFileUpload = function(event) {
   const file = event.target.files[0];
-  if (!file) return;
-
-  // Validar tipo de archivo
-  if (!file.type.startsWith('image/')) {
-    showToast('⚠️ Solo se permiten imágenes (JPG, PNG, WEBP)');
-    return;
-  }
-
+  if (!file || !file.type.startsWith('image/')) { showToast('⚠️ Solo imágenes (JPG, PNG, WEBP)'); return; }
   const reader = new FileReader();
-  reader.onload = function (e) {
+  reader.onload = e => {
     document.getElementById('f-img').value = e.target.result;
-    updatePreview();
-    showToast('📷 Imagen cargada correctamente');
+    window.updatePreview();
+    showToast('📷 Imagen cargada');
   };
   reader.readAsDataURL(file);
-}
+};
 
 /* ── GUARDAR PRODUCTO ── */
-function saveProduct() {
+window.saveProduct = async function() {
   const name      = document.getElementById('f-name').value.trim();
   const price     = parseFloat(document.getElementById('f-price').value);
   const stock     = Math.max(0, parseInt(document.getElementById('f-stock').value) || 0);
@@ -362,63 +331,63 @@ function saveProduct() {
   if (!name) { alert('Por favor ingresa el nombre del producto'); return; }
   if (isNaN(price) || price < 0) { alert('Por favor ingresa un precio válido'); return; }
 
-  const products = getProducts();
+  const btn = document.querySelector('.modal-footer .btn-save');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
 
-  if (editingId !== null) {
-    const idx = products.findIndex(x => x.id === editingId);
-    if (idx > -1) {
-      products[idx] = { ...products[idx], name, price, stock, desc, img, emoji: selectedEmoji, available };
+  try {
+    if (editingId !== null) {
+      const existing = products.find(x => x.id === editingId);
+      await fsSaveProduct({ ...existing, name, price, stock, desc, img, emoji: selectedEmoji, available });
+    } else {
+      const maxId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+      await fsSaveProduct({ id: maxId, name, price, stock, desc, img, emoji: selectedEmoji, available, order: products.length });
     }
-  } else {
-    products.push({ id: nextId(products), name, price, stock, desc, img, emoji: selectedEmoji, available });
+    window.closeModal();
+    showToast(`💾 "${esc(name)}" guardado`);
+  } catch (e) {
+    showToast('❌ Error al guardar. Intenta de nuevo.');
+    console.error(e);
   }
 
-  saveProducts(products);
-  closeModal();
-  renderAll();
-  showToast(`💾 "${esc(name)}" guardado correctamente`);
-}
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar cambios'; }
+};
 
 /* ═══════════════════════════════════════
    ELIMINAR
 ═══════════════════════════════════════ */
-function openDelModal(id) {
+window.openDelModal = function(id) {
   deletingId = id;
-  const products = getProducts();
   const p = products.find(x => x.id === id);
   document.getElementById('delProductName').textContent = `"${p?.name}"`;
   document.getElementById('delModal').classList.add('open');
-}
+};
 
-function closeDelModal() {
+window.closeDelModal = function() {
   document.getElementById('delModal').classList.remove('open');
   deletingId = null;
-}
+};
 
-function confirmDelete() {
+window.confirmDelete = async function() {
   if (deletingId === null) return;
-  const products = getProducts().filter(x => x.id !== deletingId);
-  saveProducts(products);
-  closeDelModal();
-  renderAll();
+  await fsDeleteProduct(deletingId);
+  window.closeDelModal();
   showToast('🗑️ Producto eliminado');
-}
+};
 
 /* ═══════════════════════════════════════
    RESTAURAR
 ═══════════════════════════════════════ */
-function confirmReset() {
-  if (confirm('¿Restaurar todos los productos a los valores predeterminados? Se perderán los cambios actuales.')) {
-    localStorage.removeItem('lahornada_products');
-    renderAll();
-    showToast('↺ Productos restaurados a los valores iniciales');
+window.confirmReset = async function() {
+  if (confirm('¿Restaurar todos los productos a los valores predeterminados?')) {
+    await fsSaveAllProducts(DEFAULT_PRODUCTS.map((p, i) => ({ ...p, order: i })));
+    showToast('↺ Productos restaurados');
   }
-}
+};
 
 /* ═══════════════════════════════════════
    CONFIGURACIÓN
 ═══════════════════════════════════════ */
-function saveSettings() {
+window.saveSettings = function() {
   const cfg = {
     name:  document.getElementById('cfg-name').value.trim(),
     phone: document.getElementById('cfg-phone').value.trim(),
@@ -427,7 +396,7 @@ function saveSettings() {
   };
   localStorage.setItem('lahornada_settings', JSON.stringify(cfg));
   showToast('⚙️ Configuración guardada');
-}
+};
 
 function loadSettings() {
   const s = localStorage.getItem('lahornada_settings');
@@ -450,12 +419,11 @@ function showToast(msg) {
 }
 
 /* ═══════════════════════════════════════
-   CERRAR MODALES AL HACER CLICK AFUERA
+   CERRAR MODALES AL CLICK AFUERA
 ═══════════════════════════════════════ */
 document.getElementById('editModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('editModal')) closeModal();
+  if (e.target === document.getElementById('editModal')) window.closeModal();
 });
-
 document.getElementById('delModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('delModal')) closeDelModal();
+  if (e.target === document.getElementById('delModal')) window.closeDelModal();
 });
