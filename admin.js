@@ -7,8 +7,64 @@ import {
 } from './firebase.js';
 
 /* ── CREDENCIALES ── */
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = '1234';
+const ADMIN_USER = 'adminhornada';
+const ADMIN_PASS = 'Hor009570';
+
+/* ── BLOQUEO POR INTENTOS FALLIDOS ── */
+const MAX_ATTEMPTS  = 3;
+const BLOCK_MINUTES = 5;
+
+function getLoginState() {
+  const s = localStorage.getItem('lahornada_login_state');
+  return s ? JSON.parse(s) : { attempts: 0, blockedUntil: null };
+}
+
+function saveLoginState(state) {
+  localStorage.setItem('lahornada_login_state', JSON.stringify(state));
+}
+
+function isBlocked() {
+  const state = getLoginState();
+  if (!state.blockedUntil) return false;
+  if (Date.now() < state.blockedUntil) return true;
+  // Bloqueo expirado — resetear
+  saveLoginState({ attempts: 0, blockedUntil: null });
+  return false;
+}
+
+function getRemainingMinutes() {
+  const state = getLoginState();
+  if (!state.blockedUntil) return 0;
+  return Math.ceil((state.blockedUntil - Date.now()) / 60000);
+}
+
+let blockTimer = null;
+
+function startBlockCountdown() {
+  const blockedEl = document.getElementById('loginBlocked');
+  const loginBtn  = document.querySelector('.login-btn');
+
+  function tick() {
+    if (!isBlocked()) {
+      blockedEl.style.display = 'none';
+      blockedEl.textContent   = '';
+      if (loginBtn) loginBtn.disabled = false;
+      clearInterval(blockTimer);
+      return;
+    }
+    const state = getLoginState();
+    const secsLeft = Math.ceil((state.blockedUntil - Date.now()) / 1000);
+    const mins = Math.floor(secsLeft / 60);
+    const secs = secsLeft % 60;
+    blockedEl.style.display = 'block';
+    blockedEl.innerHTML = `🔒 Acceso bloqueado por ${mins}:${String(secs).padStart(2,'0')} min<br>
+      <small>Demasiados intentos fallidos</small>`;
+    if (loginBtn) loginBtn.disabled = true;
+  }
+
+  tick();
+  blockTimer = setInterval(tick, 1000);
+}
 
 /* ── EMOJIS ── */
 const EMOJIS = ['🥟','🍩','🥧','🍮','🌀','🍪','🎂','🥐','🧁','🍞','🥖','🧇','🥞','🍰','🫓','🥨','🍡','🧆'];
@@ -37,15 +93,43 @@ function resolveImg(img) {
    AUTH
 ═══════════════════════════════════════ */
 window.doLogin = function() {
+  // Verificar bloqueo activo
+  if (isBlocked()) {
+    startBlockCountdown();
+    return;
+  }
+
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
+  const errorEl   = document.getElementById('loginError');
+  const blockedEl = document.getElementById('loginBlocked');
+
   if (u === ADMIN_USER && p === ADMIN_PASS) {
+    // Login exitoso — resetear intentos
+    saveLoginState({ attempts: 0, blockedUntil: null });
+    errorEl.style.display   = 'none';
+    blockedEl.style.display = 'none';
     document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminUI').style.display    = 'block';
+    document.getElementById('adminUI').style.display     = 'block';
     loadSettings();
     initAdmin();
   } else {
-    document.getElementById('loginError').style.display = 'block';
+    // Fallo — incrementar intentos
+    const state = getLoginState();
+    state.attempts = (state.attempts || 0) + 1;
+
+    if (state.attempts >= MAX_ATTEMPTS) {
+      state.blockedUntil = Date.now() + BLOCK_MINUTES * 60 * 1000;
+      state.attempts     = 0;
+      saveLoginState(state);
+      errorEl.style.display = 'none';
+      startBlockCountdown();
+    } else {
+      saveLoginState(state);
+      const restantes = MAX_ATTEMPTS - state.attempts;
+      errorEl.style.display = 'block';
+      errorEl.textContent   = `Usuario o contraseña incorrectos. ${restantes} intento${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''}.`;
+    }
   }
 };
 
@@ -430,3 +514,6 @@ document.getElementById('editModal').addEventListener('click', e => {
 document.getElementById('delModal').addEventListener('click', e => {
   if (e.target === document.getElementById('delModal')) window.closeDelModal();
 });
+
+/* ── Verificar bloqueo al cargar ── */
+if (isBlocked()) startBlockCountdown();

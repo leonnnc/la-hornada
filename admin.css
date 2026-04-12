@@ -134,6 +134,19 @@ body {
   display: none;
 }
 
+.login-blocked {
+  margin-top: 14px;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid var(--red);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--red);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  display: none;
+  text-align: center;
+}
+
 .login-hint {
   margin-top: 16px;
   font-size: 0.78rem;
