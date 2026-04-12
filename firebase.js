@@ -80,6 +80,22 @@ async function fsSaveOrder(order) {
   await setDoc(ref, { ...order, id: ref.id, createdAt: Date.now() });
 }
 
+/* ── Escuchar pedidos en tiempo real ── */
+function fsOnOrders(callback) {
+  const ordersCol = collection(db, 'orders');
+  return onSnapshot(ordersCol, snap => {
+    const list = snap.docs.map(d => d.data());
+    list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    callback(list);
+  });
+}
+
+/* ── Actualizar estado de un pedido ── */
+async function fsUpdateOrderStatus(id, status) {
+  const ref = doc(db, 'orders', id);
+  await updateDoc(ref, { estado: status });
+}
+
 /* ── Inicializar Firestore con productos por defecto si está vacío ── */
 async function fsInitIfEmpty() {
   const snap = await getDocs(PRODUCTS_COL);
@@ -105,5 +121,6 @@ async function fsResetProducts() {
 export {
   db, fsGetProducts, fsSaveProduct, fsSaveAllProducts,
   fsDeleteProduct, fsDeductStock, fsOnProducts,
-  fsInitIfEmpty, fsResetProducts, fsSaveOrder
+  fsInitIfEmpty, fsResetProducts, fsSaveOrder,
+  fsOnOrders, fsUpdateOrderStatus
 };

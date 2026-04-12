@@ -3,7 +3,8 @@
    ============================================= */
 import {
   fsGetProducts, fsSaveProduct, fsSaveAllProducts,
-  fsDeleteProduct, fsOnProducts, fsInitIfEmpty, fsResetProducts
+  fsDeleteProduct, fsOnProducts, fsInitIfEmpty,
+  fsResetProducts, fsOnOrders, fsUpdateOrderStatus
 } from './firebase.js';
 
 /* ── CREDENCIALES ── */
@@ -71,6 +72,9 @@ const EMOJIS = ['🥟','🍩','🥧','🍮','🌀','🍪','🎂','🥐','🧁','
 
 /* ── STATE ── */
 let products      = [];
+let allOrders     = [];
+let currentFilter = 'all';
+let currentDate   = '';
 let editingId     = null;
 let deletingId    = null;
 let selectedEmoji = '🥟';
@@ -144,10 +148,16 @@ window.doLogout = function() {
 ═══════════════════════════════════════ */
 async function initAdmin() {
   await fsInitIfEmpty();
-  // Escuchar cambios en tiempo real
+  // Escuchar productos en tiempo real
   fsOnProducts(list => {
     products = list;
     renderAll();
+  });
+  // Escuchar pedidos en tiempo real
+  fsOnOrders(orders => {
+    allOrders = orders;
+    renderOrders();
+    updatePendingBadge();
   });
 }
 
@@ -494,6 +504,161 @@ function loadSettings() {
   document.getElementById('cfg-addr').value  = cfg.addr  || '';
   document.getElementById('cfg-hours').value = cfg.hours || '';
 }
+
+/* ═══════════════════════════════════════
+   PEDIDOS
+═══════════════════════════════════════ */
+function updatePendingBadge() {
+  const pending = allOrders.filter(o =>
+    o.estado === 'pendiente_confirmacion' || o.estado === 'pendiente_envio'
+  ).length;
+  const badge = document.getElementById('pendingBadge');
+  if (badge) {
+    badge.textContent = pending > 0 ? pending : '';
+    badge.style.display = pending > 0 ? 'inline-flex' : 'none';
+  }
+}
+
+function getFilteredOrders() {
+  let list = [...allOrders];
+  if (currentFilter !== 'all') list = list.filter(o => o.estado === currentFilter);
+  if (currentDate) {
+    list = list.filter(o => {
+      // fecha guardada como string "DD/MM/YYYY, HH:MM:SS"
+      const d = new Date(o.createdAt);
+      const iso = d.toISOString().split('T')[0]; // YYYY-MM-DD
+      return iso === currentDate;
+    });
+  }
+  return list;
+}
+
+function renderOrders() {
+  const filtered = getFilteredOrders();
+
+  // Stats
+  const totalGeneral = allOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const hoy = new Date().toISOString().split('T')[0];
+  const totalHoy = allOrders.filter(o => {
+    const d = new Date(o.createdAt);
+    return d.toISOString().split('T')[0] === hoy;
+  }).reduce((s, o) => s + (o.total || 0), 0);
+  const pedidosHoy = allOrders.filter(o => {
+    const d = new Date(o.createdAt);
+    return d.toISOString().split('T')[0] === hoy;
+  }).length;
+
+  document.getElementById('ordersStatsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total pedidos</div>
+      <div class="stat-value">${allOrders.length}</div>
+      <div class="stat-desc">histórico</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pedidos hoy</div>
+      <div class="stat-value" style="color:var(--accent)">${pedidosHoy}</div>
+      <div class="stat-desc">${new Date().toLocaleDateString('es-PE')}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ventas hoy</div>
+      <div class="stat-value" style="color:var(--green);font-size:1.4rem">S/ ${totalHoy.toFixed(2)}</div>
+      <div class="stat-desc">del día</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ventas totales</div>
+      <div class="stat-value" style="color:var(--gold);font-size:1.4rem">S/ ${totalGeneral.toFixed(2)}</div>
+      <div class="stat-desc">histórico</div>
+    </div>
+  `;
+
+  const container = document.getElementById('ordersList');
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+        <div style="font-size:3rem;margin-bottom:12px">📭</div>
+        <p>No hay pedidos${currentFilter !== 'all' ? ' con este filtro' : ''} aún.</p>
+      </div>`;
+    return;
+  }
+
+  // Agrupar por día
+  const byDay = {};
+  filtered.forEach(o => {
+    const d = new Date(o.createdAt);
+    const key = d.toLocaleDateString('es-PE', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    if (!byDay[key]) byDay[key] = [];
+    byDay[key].push(o);
+  });
+
+  container.innerHTML = Object.entries(byDay).map(([day, orders]) => {
+    const dayTotal = orders.reduce((s, o) => s + (o.total || 0), 0);
+    return `
+      <div class="orders-day-group">
+        <div class="orders-day-header">
+          <span class="orders-day-label">📅 ${day}</span>
+          <span class="orders-day-total">S/ ${dayTotal.toFixed(2)}</span>
+        </div>
+        ${orders.map(o => orderCard(o)).join('')}
+      </div>`;
+  }).join('');
+}
+
+function orderCard(o) {
+  const estadoMap = {
+    pendiente_confirmacion: { label: '⏳ Pendiente Yape',  cls: 'status-pending' },
+    pendiente_envio:        { label: '🚚 Por enviar',       cls: 'status-shipping' },
+    entregado:              { label: '✅ Entregado',         cls: 'status-done' },
+  };
+  const est = estadoMap[o.estado] || { label: o.estado, cls: '' };
+  const hora = new Date(o.createdAt).toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
+
+  return `
+    <div class="order-card">
+      <div class="order-card-header">
+        <div class="order-client">
+          <span class="order-name">👤 ${esc(o.nombre)}</span>
+          <span class="order-phone">📞 ${esc(o.telefono)}</span>
+          ${o.direccion && o.direccion !== '—' ? `<span class="order-addr">📍 ${esc(o.direccion)}</span>` : ''}
+        </div>
+        <div class="order-meta">
+          <span class="order-time">🕐 ${hora}</span>
+          <span class="order-pay ${o.metodoPago === 'yape' ? 'pay-yape' : 'pay-contra'}">
+            ${o.metodoPago === 'yape' ? '📱 Yape' : '💵 Contraentrega'}
+          </span>
+          ${o.yapeDe && o.yapeDe !== '—' ? `<span class="order-yape-from">desde ${esc(o.yapeDe)}</span>` : ''}
+        </div>
+      </div>
+      <div class="order-items">${esc(o.items || '').replace(/\n/g, '<br>')}</div>
+      <div class="order-card-footer">
+        <span class="order-total">S/ ${Number(o.total || 0).toFixed(2)}</span>
+        <div class="order-status-group">
+          <span class="order-status ${est.cls}">${est.label}</span>
+          <select class="status-select" onchange="changeOrderStatus('${o.id}', this.value)">
+            <option value="pendiente_confirmacion" ${o.estado==='pendiente_confirmacion'?'selected':''}>⏳ Pendiente Yape</option>
+            <option value="pendiente_envio"        ${o.estado==='pendiente_envio'?'selected':''}>🚚 Por enviar</option>
+            <option value="entregado"              ${o.estado==='entregado'?'selected':''}>✅ Entregado</option>
+          </select>
+        </div>
+      </div>
+    </div>`;
+}
+
+window.filterOrders = function(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderOrders();
+};
+
+window.filterByDate = function(val) {
+  currentDate = val;
+  renderOrders();
+};
+
+window.changeOrderStatus = async function(id, newStatus) {
+  await fsUpdateOrderStatus(id, newStatus);
+  showToast(`✅ Estado actualizado`);
+};
 
 /* ═══════════════════════════════════════
    TOAST

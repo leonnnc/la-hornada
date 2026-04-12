@@ -67,6 +67,10 @@
         <div class="sidebar-item active" onclick="showSection('products', this)">
           <span class="icon">🍽️</span> Productos
         </div>
+        <div class="sidebar-item" onclick="showSection('orders', this)">
+          <span class="icon">📋</span> Pedidos
+          <span class="sidebar-badge" id="pendingBadge"></span>
+        </div>
         <div class="sidebar-item" onclick="showSection('settings', this)">
           <span class="icon">⚙️</span> Configuración
         </div>
@@ -104,6 +108,29 @@
             </thead>
             <tbody id="productsTableBody"></tbody>
           </table>
+        </div>
+
+        <!-- ── SECCIÓN PEDIDOS ── -->
+        <div id="section-orders" style="display:none">
+          <div class="page-title">Historial de Pedidos</div>
+          <div class="page-sub">Todos los pedidos recibidos, datos de clientes y totales</div>
+
+          <!-- Resumen de ventas -->
+          <div class="stats-row" id="ordersStatsRow"></div>
+
+          <!-- Filtros -->
+          <div class="orders-toolbar">
+            <div class="orders-filter-group">
+              <button class="filter-btn active" onclick="filterOrders('all', this)">Todos</button>
+              <button class="filter-btn" onclick="filterOrders('pendiente_confirmacion', this)">⏳ Pendiente Yape</button>
+              <button class="filter-btn" onclick="filterOrders('pendiente_envio', this)">🚚 Por enviar</button>
+              <button class="filter-btn" onclick="filterOrders('entregado', this)">✅ Entregados</button>
+            </div>
+            <input type="date" id="filterDate" class="date-filter" onchange="filterByDate(this.value)" title="Filtrar por fecha">
+          </div>
+
+          <!-- Lista de pedidos -->
+          <div id="ordersList"></div>
         </div>
 
         <!-- ── SECCIÓN CONFIGURACIÓN ── -->
