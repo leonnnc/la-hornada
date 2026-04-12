@@ -1,7 +1,7 @@
 /* =============================================
    LA HORNADA — Tienda JS (Firebase)
    ============================================= */
-import { fsGetProducts, fsDeductStock, fsOnProducts, fsInitIfEmpty } from './firebase.js';
+import { fsGetProducts, fsDeductStock, fsOnProducts, fsInitIfEmpty, fsSaveOrder } from './firebase.js';
 
 /* ── STATE ── */
 let products = [];
@@ -254,7 +254,17 @@ function bumpBadge() {
   badge.classList.add('bump');
 }
 
-/* ── ORDER: descontar stock en Firestore ── */
+/* ── EMAILJS CONFIG ── */
+const EMAILJS_SERVICE  = 'service_lahornada';
+const EMAILJS_TEMPLATE = 'template_pedido';
+const EMAILJS_KEY      = 'TU_PUBLIC_KEY'; // ← reemplazar con tu Public Key de EmailJS
+
+/* ── CHECKOUT STATE ── */
+let pendingCart     = {};
+let pendingPreorder = {};
+let pendingTotal    = 0;
+
+/* ── ORDER: abrir checkout ── */
 window.placeOrder = async function() {
   const btn = document.querySelector('.order-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
@@ -267,20 +277,133 @@ window.placeOrder = async function() {
     console.error('Error al descontar stock:', e);
   }
 
+  // Guardar pedido pendiente y abrir checkout
+  pendingCart     = { ...cart };
+  pendingPreorder = { ...preorder };
+  pendingTotal    = parseFloat(document.getElementById('totalAmt').textContent.replace('S/ ', '')) || 0;
+
   cart     = {};
   preorder = {};
   updateCartUI();
   window.closeCart();
-  document.getElementById('modalOverlay').classList.add('open');
+
+  // Mostrar monto en Yape
+  document.getElementById('yapeAmount').textContent = `Total a yapear: S/ ${pendingTotal.toFixed(2)}`;
+
+  // Mostrar paso 1
+  showCheckoutStep('payment');
+  document.getElementById('checkoutOverlay').classList.add('open');
+
   if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar Pedido'; }
 };
 
-window.closeModal = function() {
-  document.getElementById('modalOverlay').classList.remove('open');
+/* ── CHECKOUT: navegación entre pasos ── */
+function showCheckoutStep(step) {
+  ['payment','yape','contra','success'].forEach(s => {
+    document.getElementById(`step-${s}`).style.display = 'none';
+  });
+  document.getElementById(`step-${step}`).style.display = 'block';
+}
+
+window.selectPayment = function(method) {
+  showCheckoutStep(method === 'yape' ? 'yape' : 'contra');
+};
+
+window.backToPayment = function() {
+  showCheckoutStep('payment');
+};
+
+/* ── CHECKOUT: enviar pedido ── */
+window.submitOrder = async function(method) {
+  let nombre, telefono, direccion, yapeDe;
+
+  if (method === 'yape') {
+    nombre   = document.getElementById('yape-name').value.trim();
+    telefono = document.getElementById('yape-phone').value.trim();
+    yapeDe   = document.getElementById('yape-from').value.trim();
+    if (!nombre || !telefono || !yapeDe) {
+      showToast('⚠️ Por favor completa todos los campos');
+      return;
+    }
+  } else {
+    nombre    = document.getElementById('contra-name').value.trim();
+    telefono  = document.getElementById('contra-phone').value.trim();
+    direccion = document.getElementById('contra-addr').value.trim();
+    if (!nombre || !telefono || !direccion) {
+      showToast('⚠️ Por favor completa todos los campos');
+      return;
+    }
+  }
+
+  const btn = document.querySelector('.btn-confirm-order:not([style*="none"])');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+  // Armar resumen del pedido
+  const itemsHoy = Object.keys(pendingCart).map(id => {
+    const p = products.find(x => x.id == id);
+    return `• ${p.name} x${pendingCart[id]} = S/ ${(p.price * pendingCart[id]).toFixed(2)}`;
+  }).join('\n');
+
+  const itemsMañana = Object.keys(pendingPreorder).map(id => {
+    const p = products.find(x => x.id == id);
+    return `• ${p.name} x${pendingPreorder[id]} (para mañana)`;
+  }).join('\n');
+
+  const resumen = [itemsHoy, itemsMañana].filter(Boolean).join('\n');
+  const fecha   = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+
+  // Guardar pedido en Firestore
+  try {
+    await fsSaveOrder({
+      nombre, telefono,
+      direccion: direccion || '—',
+      metodoPago: method,
+      yapeDe: yapeDe || '—',
+      items: resumen,
+      total: pendingTotal,
+      fecha,
+      estado: method === 'yape' ? 'pendiente_confirmacion' : 'pendiente_envio'
+    });
+  } catch(e) { console.error('Error guardando pedido:', e); }
+
+  // Enviar email via EmailJS
+  try {
+    await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+      to_email:    'yape975524363@gmail.com',
+      cliente:     nombre,
+      telefono,
+      direccion:   direccion || '—',
+      metodo_pago: method === 'yape' ? `Yape desde ${yapeDe}` : 'Contraentrega',
+      items:       resumen,
+      total:       `S/ ${pendingTotal.toFixed(2)}`,
+      fecha
+    }, EMAILJS_KEY);
+  } catch(e) { console.error('Error enviando email:', e); }
+
+  // Mostrar éxito
+  const msg = method === 'yape'
+    ? `¡Gracias ${nombre}! Recibimos tu pedido. Verificaremos tu Yape y te contactamos al ${telefono} para coordinar la entrega. 🎉`
+    : `¡Gracias ${nombre}! Recibimos tu pedido. Te contactamos al ${telefono} para coordinar la entrega en ${direccion}. 🎉`;
+
+  document.getElementById('successMsg').textContent = msg;
+  showCheckoutStep('success');
+
+  if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar pedido'; }
+};
+
+window.closeCheckout = function() {
+  document.getElementById('checkoutOverlay').classList.remove('open');
+  pendingCart = {}; pendingPreorder = {}; pendingTotal = 0;
+  renderProducts();
 };
 
 /* ── INIT ── */
 async function init() {
+  // Inicializar EmailJS
+  if (typeof emailjs !== 'undefined') {
+    emailjs.init(EMAILJS_KEY);
+  }
+
   applyStoreSettings();
 
   // Mostrar loading

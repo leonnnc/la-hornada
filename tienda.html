@@ -98,17 +98,93 @@
   <div class="toast" id="toast"></div>
 
   <!-- ═══════════════════════════════════════
-       MODAL DE ÉXITO
+       MODAL CHECKOUT (pago + datos)
   ════════════════════════════════════════ -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <div class="modal-icon">🎉</div>
-      <h3>¡Pedido confirmado!</h3>
-      <p>
-        Tu pedido ha sido recibido. Lo prepararemos con todo el cariño.<br>
-        Pronto nos ponemos en contacto contigo. ¡Gracias!
-      </p>
-      <button class="modal-close" onclick="closeModal()">¡Genial, gracias!</button>
+  <div class="modal-overlay" id="checkoutOverlay">
+    <div class="modal checkout-modal">
+
+      <!-- PASO 1: método de pago -->
+      <div id="step-payment">
+        <div class="modal-icon">🧾</div>
+        <h3>¿Cómo deseas pagar?</h3>
+        <p style="margin-top:8px;color:var(--text-muted);font-size:0.9rem">Elige tu método de pago</p>
+        <div class="pay-options">
+          <button class="pay-opt" onclick="selectPayment('yape')">
+            <span class="pay-icon">📱</span>
+            <span class="pay-label">Yape</span>
+            <span class="pay-desc">Pago digital al instante</span>
+          </button>
+          <button class="pay-opt" onclick="selectPayment('contraentrega')">
+            <span class="pay-icon">💵</span>
+            <span class="pay-label">Contraentrega</span>
+            <span class="pay-desc">Pagas al recibir</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PASO 2a: Yape -->
+      <div id="step-yape" style="display:none">
+        <div class="modal-icon">📱</div>
+        <h3>Pago por Yape</h3>
+        <div class="yape-info">
+          <div class="yape-number">📲 975 524 363</div>
+          <div class="yape-name">La Hornada</div>
+          <div class="yape-amount" id="yapeAmount"></div>
+          <p class="yape-hint">Yapea el monto exacto y llena tus datos</p>
+        </div>
+        <div class="checkout-form">
+          <div class="cf-row">
+            <label>Tu nombre</label>
+            <input type="text" id="yape-name" placeholder="¿Cómo te llamamos?">
+          </div>
+          <div class="cf-row">
+            <label>Tu teléfono</label>
+            <input type="tel" id="yape-phone" placeholder="Ej: 987 654 321">
+          </div>
+          <div class="cf-row">
+            <label>Número desde el que yapeas</label>
+            <input type="tel" id="yape-from" placeholder="Número Yape">
+          </div>
+        </div>
+        <div class="checkout-footer">
+          <button class="btn-back" onclick="backToPayment()">← Volver</button>
+          <button class="btn-confirm-order" onclick="submitOrder('yape')">✅ Ya yapié, confirmar</button>
+        </div>
+      </div>
+
+      <!-- PASO 2b: Contraentrega -->
+      <div id="step-contra" style="display:none">
+        <div class="modal-icon">🚚</div>
+        <h3>Pago contraentrega</h3>
+        <p style="margin-top:6px;color:var(--text-muted);font-size:0.88rem">Pagas en efectivo al recibir tu pedido</p>
+        <div class="checkout-form">
+          <div class="cf-row">
+            <label>Tu nombre</label>
+            <input type="text" id="contra-name" placeholder="¿Cómo te llamamos?">
+          </div>
+          <div class="cf-row">
+            <label>Tu teléfono</label>
+            <input type="tel" id="contra-phone" placeholder="Ej: 987 654 321">
+          </div>
+          <div class="cf-row">
+            <label>Dirección de entrega</label>
+            <input type="text" id="contra-addr" placeholder="Calle, número, referencia...">
+          </div>
+        </div>
+        <div class="checkout-footer">
+          <button class="btn-back" onclick="backToPayment()">← Volver</button>
+          <button class="btn-confirm-order" onclick="submitOrder('contraentrega')">✅ Confirmar pedido</button>
+        </div>
+      </div>
+
+      <!-- PASO 3: Éxito -->
+      <div id="step-success" style="display:none">
+        <div class="modal-icon">🎉</div>
+        <h3>¡Pedido enviado!</h3>
+        <p id="successMsg">Tu pedido ha sido recibido. Lo prepararemos con todo el cariño.<br>Pronto nos ponemos en contacto contigo. ¡Gracias!</p>
+        <button class="modal-close" onclick="closeCheckout()">¡Genial, gracias!</button>
+      </div>
+
     </div>
   </div>
 
@@ -121,6 +197,7 @@
   </footer>
 
   <script src="products.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script type="module" src="tienda.js"></script>
 </body>
 </html>

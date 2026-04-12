@@ -73,6 +73,13 @@ function fsOnProducts(callback) {
   });
 }
 
+/* ── Guardar pedido en Firestore ── */
+async function fsSaveOrder(order) {
+  const ordersCol = collection(db, 'orders');
+  const ref = doc(ordersCol);
+  await setDoc(ref, { ...order, id: ref.id, createdAt: Date.now() });
+}
+
 /* ── Inicializar Firestore con productos por defecto si está vacío ── */
 async function fsInitIfEmpty() {
   const snap = await getDocs(PRODUCTS_COL);
@@ -98,5 +105,5 @@ async function fsResetProducts() {
 export {
   db, fsGetProducts, fsSaveProduct, fsSaveAllProducts,
   fsDeleteProduct, fsDeductStock, fsOnProducts,
-  fsInitIfEmpty, fsResetProducts
+  fsInitIfEmpty, fsResetProducts, fsSaveOrder
 };
