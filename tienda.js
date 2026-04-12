@@ -648,18 +648,41 @@ window.downloadFlyer = function() {
   link.click();
 };
 
-window.shareWhatsApp = function() {
+window.shareWhatsApp = async function() {
   const canvas = document.getElementById('flyerCanvas');
-  // En móvil: descargar + abrir WhatsApp
+
+  // Intentar Web Share API (funciona en móvil)
+  if (navigator.share && navigator.canShare) {
+    try {
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], 'flyer-lahornada.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'La Hornada — Flyer',
+          });
+        } else {
+          // No soporta compartir archivos, descargar
+          fallbackDownload(canvas);
+        }
+      }, 'image/png');
+    } catch (e) {
+      // Usuario canceló o error
+      if (e.name !== 'AbortError') fallbackDownload(canvas);
+    }
+  } else {
+    // Desktop: descargar y avisar
+    fallbackDownload(canvas);
+    showToast('📥 Imagen descargada — adjúntala en WhatsApp manualmente');
+  }
+};
+
+function fallbackDownload(canvas) {
   const link = document.createElement('a');
   link.download = 'flyer-lahornada.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
-  // Pequeño delay para que descargue primero
-  setTimeout(() => {
-    window.open('https://wa.me/', '_blank');
-  }, 800);
-};
+}
 
 window.copySocialText = function() {
   const text = document.getElementById('pmSocialText').textContent;
