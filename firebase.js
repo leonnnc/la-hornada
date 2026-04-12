@@ -192,5 +192,5 @@ export {
   fsDeleteProduct, fsDeductStock, fsOnProducts,
   fsInitIfEmpty, fsResetProducts, fsSaveOrder,
   fsOnOrders, fsOnArchivedOrders, fsUpdateOrderStatus,
-  fsWatchOrderStatus, fsArchivarPedido
+  fsWatchOrderStatus
 };

@@ -687,7 +687,6 @@ window.clearArchiveFilter = function() {
   if (input) input.value = '';
   renderArchive();
 };
-}
 
 function orderCard(o, isArchived = false) {
   const estadoMap = {
