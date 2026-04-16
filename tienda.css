@@ -246,6 +246,15 @@ header {
   display: block;
 }
 
+.product-img-bebida {
+  background: #FFFFFF !important;
+}
+
+.product-img-bebida img {
+  object-fit: contain;
+  padding: 10px;
+}
+
 .product-card:hover .product-img img { transform: scale(1.07); }
 
 .product-img .emoji-fallback {
@@ -1078,4 +1087,126 @@ footer strong {
 @media (max-width: 400px) {
   .products-grid { grid-template-columns: 1fr; }
   .product-img   { height: 160px; }
+}
+
+/* ── MODAL COMBO BEBIDAS ── */
+.combo-modal {
+  max-width: 520px;
+  padding: 36px 28px 28px;
+  text-align: center;
+}
+
+.combo-icon {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+  animation: dropIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-20px) scale(0.8); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.combo-modal h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  color: var(--brown);
+  font-weight: 700;
+}
+
+.combo-modal p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-top: 6px;
+}
+
+.combo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 22px 0 16px;
+}
+
+.combo-bebida-card {
+  background: var(--warm);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 14px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.combo-bebida-card:hover {
+  border-color: #4FC3F7;
+  background: #e8f7fd;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(79, 195, 247, 0.2);
+}
+
+.combo-bebida-card:active { transform: scale(0.97); }
+
+.combo-bebida-img {
+  width: 70px;
+  height: 70px;
+  background: #FFFFFF;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.combo-bebida-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.combo-bebida-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--brown);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.combo-bebida-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0288D1;
+}
+
+.combo-bebida-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brown);
+  background: rgba(61, 35, 20, 0.08);
+  border-radius: 50px;
+  padding: 4px 12px;
+}
+
+.combo-btn-no {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.combo-btn-no:hover {
+  color: var(--brown);
+  background: var(--warm);
 }

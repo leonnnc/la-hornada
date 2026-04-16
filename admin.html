@@ -74,6 +74,9 @@
         <div class="sidebar-item" onclick="showSection('archive', this)">
           <span class="icon">📁</span> Archivo
         </div>
+        <div class="sidebar-item" onclick="showSection('campanas', this)">
+          <span class="icon">📣</span> Campañas
+        </div>
         <div class="sidebar-item" onclick="showSection('settings', this)">
           <span class="icon">⚙️</span> Configuración
         </div>
@@ -151,6 +154,120 @@
             </button>
           </div>
           <div id="archiveList"></div>
+        </div>
+
+        <!-- ── SECCIÓN CAMPAÑAS ── -->
+        <div id="section-campanas" style="display:none">
+          <div class="page-title">📣 Campañas WhatsApp</div>
+          <div class="page-sub">Elige un producto, agrega los números y envía el flyer por WhatsApp</div>
+
+          <!-- ══ LAYOUT PRINCIPAL: dos columnas ══ -->
+          <div class="campana-layout" id="campana-layout">
+
+            <!-- COLUMNA IZQUIERDA: producto + números -->
+            <div class="campana-left">
+
+              <!-- Bloque: elegir producto -->
+              <div class="campana-bloque">
+                <div class="campana-bloque-title">
+                  <span class="campana-step-num">1</span>
+                  Producto a promocionar
+                </div>
+                <div class="campana-productos-grid" id="campanaProductosGrid"></div>
+              </div>
+
+              <!-- Bloque: agregar números -->
+              <div class="campana-bloque">
+                <div class="campana-bloque-title">
+                  <span class="campana-step-num">2</span>
+                  Agrega los números de WhatsApp
+                </div>
+
+                <div class="campana-add-form">
+                  <input type="text" id="campanaInputNombre" class="campana-input"
+                    placeholder="Nombre (opcional)">
+                  <div class="campana-add-inline">
+                    <input type="tel" id="campanaInputTel" class="campana-input"
+                      placeholder="Ej: 987654321"
+                      onkeydown="if(event.key==='Enter') agregarNumeroCampana()">
+                    <button class="campana-btn-agregar" onclick="agregarNumeroCampana()">
+                      ＋ Agregar
+                    </button>
+                  </div>
+                  <div class="campana-add-hint">💡 Sin código de país — solo los 9 dígitos</div>
+                </div>
+
+                <!-- Clientes Firestore (si hay) -->
+                <div id="campanaClientesSection">
+                  <div class="campana-clientes-header">
+                    <span class="campana-col-title" style="margin:0">
+                      👥 Clientes registrados
+                      <span class="campana-clientes-count" id="campanaClientesCount"></span>
+                    </span>
+                    <div class="campana-sel-actions">
+                      <button class="campana-sel-btn" onclick="seleccionarTodosClientes(true)">＋ Todos</button>
+                      <button class="campana-sel-btn" onclick="seleccionarTodosClientes(false)">✕ Quitar</button>
+                    </div>
+                  </div>
+                  <input type="text" id="campanaSearch" class="campana-input"
+                    placeholder="🔍 Buscar cliente..."
+                    oninput="filtrarClientesCampana(this.value)">
+                  <div class="campana-clientes-list" id="campanaClientesList"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: lista de números + envío -->
+            <div class="campana-right">
+              <div class="campana-bloque campana-bloque-sticky">
+                <div class="campana-bloque-title">
+                  <span class="campana-step-num">3</span>
+                  Lista de envío
+                  <span class="campana-clientes-count" id="campanaNumerosCount">0</span>
+                </div>
+
+                <!-- Lista de números -->
+                <div class="campana-numeros-list" id="campanaNumerosLista">
+                  <div class="campana-numeros-empty">
+                    Agrega números a la izquierda 👈
+                  </div>
+                </div>
+
+                <!-- Botón enviar -->
+                <div class="campana-enviar-wrap">
+                  <div class="campana-enviar-info">
+                    <span id="campanaSelCount">0</span> números listos
+                  </div>
+                  <button class="campana-btn-start" id="campanaBtnStart"
+                    onclick="iniciarCampana()" disabled>
+                    🚀 Iniciar envío por WhatsApp
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ PASO ENVÍO: pantalla de envío uno por uno ══ -->
+          <div id="campana-step3" style="display:none">
+            <div class="campana-bloque">
+              <div class="campana-bloque-title">
+                <span class="campana-step-num">✉️</span>
+                Enviando campaña
+              </div>
+
+              <div class="campana-progreso">
+                <div class="campana-progreso-bar">
+                  <div class="campana-progreso-fill" id="campanaProgresoFill"></div>
+                </div>
+                <div class="campana-progreso-txt" id="campanaProgresoTxt"></div>
+              </div>
+
+              <div class="campana-actual" id="campanaActual"></div>
+              <div class="campana-envio-btns" id="campanaEnvioBtns"></div>
+              <div class="campana-enviados" id="campanaEnviados"></div>
+            </div>
+          </div>
+
         </div>
 
         <!-- ── SECCIÓN CONFIGURACIÓN ── -->

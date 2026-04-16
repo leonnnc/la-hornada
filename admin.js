@@ -5,7 +5,7 @@ import {
   fsGetProducts, fsSaveProduct, fsSaveAllProducts,
   fsDeleteProduct, fsOnProducts, fsInitIfEmpty,
   fsResetProducts, fsOnOrders, fsOnArchivedOrders,
-  fsUpdateOrderStatus
+  fsUpdateOrderStatus, fsGetClientes
 } from './firebase.js';
 
 /* ── CREDENCIALES ── */
@@ -781,3 +781,480 @@ document.getElementById('delModal').addEventListener('click', e => {
 
 /* ── Verificar bloqueo al cargar ── */
 if (isBlocked()) startBlockCountdown();
+
+
+/* ═══════════════════════════════════════
+   CAMPAÑAS WHATSAPP
+═══════════════════════════════════════ */
+
+let campanaProducto      = null;
+let campanaClientes      = [];
+let campanaFiltrados     = [];
+let campanaNumerosManual = [];
+let campanaQueue         = [];
+let campanaIndex         = 0;
+let campanaEnviadosLog   = [];
+
+async function initCampanas() {
+  campanaProducto      = null;
+  campanaNumerosManual = [];
+  campanaQueue         = [];
+  campanaIndex         = 0;
+  campanaEnviadosLog   = [];
+
+  const layout = document.getElementById('campana-layout');
+  const step3  = document.getElementById('campana-step3');
+  if (layout) layout.style.display = '';
+  if (step3)  step3.style.display  = 'none';
+
+  renderCampanaProductos();
+  renderNumerosAgregados();
+  actualizarFooterCampana();
+
+  try { campanaClientes = await fsGetClientes(); } catch { campanaClientes = []; }
+  campanaFiltrados = [...campanaClientes];
+  renderClientesCampana();
+  actualizarCountClientes();
+}
+
+function renderCampanaProductos() {
+  const grid = document.getElementById('campanaProductosGrid');
+  if (!grid) return;
+  if (products.length === 0) {
+    grid.innerHTML = `<p style="color:var(--text-muted);padding:20px">Cargando productos...</p>`;
+    return;
+  }
+  grid.innerHTML = products.map(p => {
+    const imgSrc = resolveImg(p.img);
+    const activo = campanaProducto && campanaProducto.id === p.id;
+    return `
+    <div class="campana-prod-card ${activo ? 'activo' : ''}" onclick="seleccionarProductoCampana(${p.id})">
+      <div class="campana-prod-img">
+        ${imgSrc ? `<img src="${imgSrc}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+        <span class="campana-prod-emoji" ${imgSrc ? 'style="display:none"' : ''}>${p.emoji}</span>
+      </div>
+      <div class="campana-prod-info">
+        <div class="campana-prod-name">${esc(p.name)}</div>
+        <div class="campana-prod-price">S/ ${Number(p.price).toFixed(2)}</div>
+      </div>
+      ${activo ? '<span class="campana-prod-check">✓</span>' : '<span class="campana-prod-arrow">→</span>'}
+    </div>`;
+  }).join('');
+}
+
+window.seleccionarProductoCampana = function(id) {
+  campanaProducto = products.find(p => p.id === id);
+  renderCampanaProductos();
+  actualizarFooterCampana();
+  showToast(`✅ ${campanaProducto.name} seleccionado`);
+};
+
+window.agregarNumeroCampana = function() {
+  const telInput    = document.getElementById('campanaInputTel');
+  const nombreInput = document.getElementById('campanaInputNombre');
+  const tel    = telInput.value.trim().replace(/\D/g, '');
+  const nombre = nombreInput.value.trim() || 'Cliente';
+  if (!tel || tel.length < 7) { showToast('⚠️ Ingresa un número válido'); return; }
+  if (campanaNumerosManual.find(x => x.telefono === tel)) { showToast('⚠️ Ese número ya está en la lista'); return; }
+  campanaNumerosManual.push({ nombre, telefono: tel, fuente: 'manual' });
+  telInput.value    = '';
+  nombreInput.value = '';
+  telInput.focus();
+  renderNumerosAgregados();
+  actualizarFooterCampana();
+  showToast(`✅ ${nombre} (${tel}) agregado`);
+};
+
+window.agregarClienteFirestore = function(tel, nombre) {
+  if (campanaNumerosManual.find(x => x.telefono === tel)) { showToast('⚠️ Ese número ya está en la lista'); return; }
+  campanaNumerosManual.push({ nombre, telefono: tel, fuente: 'firestore' });
+  renderNumerosAgregados();
+  renderClientesCampana();
+  actualizarFooterCampana();
+  showToast(`✅ ${nombre} agregado`);
+};
+
+window.quitarNumeroCampana = function(tel) {
+  campanaNumerosManual = campanaNumerosManual.filter(x => x.telefono !== tel);
+  renderNumerosAgregados();
+  renderClientesCampana();
+  actualizarFooterCampana();
+};
+
+function renderNumerosAgregados() {
+  const lista = document.getElementById('campanaNumerosLista');
+  const count = document.getElementById('campanaNumerosCount');
+  if (!lista) return;
+  if (count) count.textContent = campanaNumerosManual.length;
+  if (campanaNumerosManual.length === 0) {
+    lista.innerHTML = `<div class="campana-numeros-empty">Agrega números a la izquierda 👈</div>`;
+    return;
+  }
+  lista.innerHTML = campanaNumerosManual.map((c, i) => `
+    <div class="campana-numero-tag">
+      <span class="campana-numero-idx">${i + 1}</span>
+      <div class="campana-numero-data">
+        <span class="campana-numero-nombre">${esc(c.nombre)}</span>
+        <span class="campana-numero-tel">📞 ${esc(c.telefono)}</span>
+      </div>
+      <span class="campana-numero-src">${c.fuente === 'firestore' ? '👥' : '✍️'}</span>
+      <button class="campana-numero-del" onclick="quitarNumeroCampana('${c.telefono}')" title="Quitar">✕</button>
+    </div>`).join('');
+}
+
+function renderClientesCampana() {
+  const list = document.getElementById('campanaClientesList');
+  if (!list) return;
+  if (campanaFiltrados.length === 0) {
+    list.innerHTML = `<div style="color:var(--text-muted);font-size:0.82rem;padding:10px 0">
+      ${campanaClientes.length === 0 ? '👥 Sin clientes aún — usa el formulario de arriba.' : '🔍 Sin resultados.'}</div>`;
+    return;
+  }
+  list.innerHTML = campanaFiltrados.map(c => {
+    const yaAgregado = !!campanaNumerosManual.find(x => x.telefono === c.telefono);
+    return `
+    <div class="campana-cliente-row ${yaAgregado ? 'ya-agregado' : ''}">
+      <div class="campana-cliente-info">
+        <div class="campana-cliente-nombre">${esc(c.nombre || '—')}</div>
+        <div class="campana-cliente-tel">📞 ${esc(c.telefono)}</div>
+      </div>
+      <span class="campana-cliente-pedidos">${c.totalPedidos || 0} pedidos</span>
+      ${yaAgregado
+        ? `<button class="campana-btn-ya" disabled>✓</button>`
+        : `<button class="campana-btn-agregar-fs" onclick="agregarClienteFirestore('${c.telefono}','${esc(c.nombre||'Cliente')}')">＋</button>`}
+    </div>`;
+  }).join('');
+}
+
+window.seleccionarTodosClientes = function(agregar) {
+  if (agregar) {
+    campanaFiltrados.forEach(c => {
+      if (!campanaNumerosManual.find(x => x.telefono === c.telefono))
+        campanaNumerosManual.push({ nombre: c.nombre || 'Cliente', telefono: c.telefono, fuente: 'firestore' });
+    });
+  } else {
+    const tels = new Set(campanaFiltrados.map(c => c.telefono));
+    campanaNumerosManual = campanaNumerosManual.filter(x => !tels.has(x.telefono));
+  }
+  renderNumerosAgregados();
+  renderClientesCampana();
+  actualizarFooterCampana();
+};
+
+window.filtrarClientesCampana = function(q) {
+  const t = q.toLowerCase().trim();
+  campanaFiltrados = t
+    ? campanaClientes.filter(c => (c.nombre||'').toLowerCase().includes(t) || (c.telefono||'').includes(t))
+    : [...campanaClientes];
+  renderClientesCampana();
+};
+
+function actualizarCountClientes() {
+  const el = document.getElementById('campanaClientesCount');
+  if (el) el.textContent = `(${campanaClientes.length})`;
+}
+
+function actualizarFooterCampana() {
+  const count = document.getElementById('campanaSelCount');
+  const btn   = document.getElementById('campanaBtnStart');
+  const n = campanaNumerosManual.length;
+  if (count) count.textContent = n;
+  if (btn) btn.disabled = n === 0 || !campanaProducto;
+}
+
+window.iniciarCampana = function() {
+  if (!campanaProducto) { showToast('⚠️ Primero selecciona un producto'); return; }
+  if (campanaNumerosManual.length === 0) { showToast('⚠️ Agrega al menos un número'); return; }
+  campanaQueue = [...campanaNumerosManual];
+  campanaIndex = 0;
+  campanaEnviadosLog = [];
+  const layout = document.getElementById('campana-layout');
+  const step3  = document.getElementById('campana-step3');
+  if (layout) layout.style.display = 'none';
+  if (step3)  step3.style.display  = 'block';
+  renderCampanaEnvio();
+};
+
+function renderCampanaEnvio() {
+  const total = campanaQueue.length;
+  const pct   = total > 0 ? Math.round((campanaIndex / total) * 100) : 0;
+  document.getElementById('campanaProgresoFill').style.width = pct + '%';
+  document.getElementById('campanaProgresoTxt').textContent =
+    campanaIndex < total
+      ? `${campanaIndex} de ${total} enviados — quedan ${total - campanaIndex}`
+      : `✅ ¡Campaña completada! ${total} mensajes enviados`;
+
+  const actualEl   = document.getElementById('campanaActual');
+  const btnsEl     = document.getElementById('campanaEnvioBtns');
+  const enviadosEl = document.getElementById('campanaEnviados');
+
+  if (campanaIndex >= total) {
+    actualEl.innerHTML = `
+      <div class="campana-done">
+        <div class="campana-done-icon">🎉</div>
+        <div class="campana-done-txt">¡Campaña completada!</div>
+        <div class="campana-done-sub">Enviaste el flyer a ${total} contacto${total !== 1 ? 's' : ''}.</div>
+      </div>`;
+    btnsEl.innerHTML = `<button class="campana-btn-start" onclick="campanaVolver()">← Nueva campaña</button>`;
+  } else {
+    const c   = campanaQueue[campanaIndex];
+    const tel = c.telefono.replace(/\D/g, '');
+    const waMsg = buildWAMessage(campanaProducto, c.nombre);
+    const waUrl = `https://wa.me/51${tel}?text=${encodeURIComponent(waMsg)}`;
+
+    actualEl.innerHTML = `
+      <div class="campana-envio-layout">
+        <div class="campana-flyer-wrap">
+          <canvas id="campanaFlyerCanvas" style="display:none"></canvas>
+          <img id="campanaFlyerImg" class="campana-flyer-img" alt="Flyer">
+          <div class="campana-flyer-loading">⏳ Generando flyer...</div>
+        </div>
+        <div class="campana-cliente-actual">
+          <div class="campana-actual-num">Contacto ${campanaIndex + 1} de ${total}</div>
+          <div class="campana-actual-nombre">👤 ${esc(c.nombre)}</div>
+          <div class="campana-actual-tel">📞 ${esc(c.telefono)}</div>
+          <div class="campana-msg-preview">${waMsg.replace(/\n/g, '<br>').replace(/\*(.*?)\*/g, '<strong>$1</strong>')}</div>
+        </div>
+      </div>`;
+
+    btnsEl.innerHTML = `
+      <a class="campana-btn-wa" id="campanaBtnWA" href="${waUrl}" target="_blank"
+        onclick="registrarEnviado('${c.telefono}','${esc(c.nombre)}')">
+        💬 Abrir WhatsApp y enviar
+      </a>
+      <button class="campana-btn-skip" onclick="saltarCliente()">⏭ Saltar</button>`;
+
+    // Generar flyer en canvas y actualizar el link de WA con imagen
+    generarFlyerCampana(campanaProducto, waUrl, c);
+  }
+
+  if (campanaEnviadosLog.length > 0) {
+    enviadosEl.innerHTML = `
+      <div class="campana-enviados-title">✅ Enviados (${campanaEnviadosLog.length})</div>
+      ${campanaEnviadosLog.map(e => `
+        <div class="campana-enviado-row">
+          <span>👤 ${esc(e.nombre)}</span>
+          <span style="color:var(--text-muted)">📞 ${esc(e.tel)}</span>
+          <span class="campana-enviado-badge">Enviado</span>
+        </div>`).join('')}`;
+  } else {
+    enviadosEl.innerHTML = '';
+  }
+}
+
+/* ── Generar flyer en canvas para la campaña ── */
+function generarFlyerCampana(p, waUrl, contacto) {
+  const canvas = document.getElementById('campanaFlyerCanvas');
+  if (!canvas) return;
+  const cfg = (() => { try { return JSON.parse(localStorage.getItem('lahornada_settings')||'{}'); } catch { return {}; } })();
+  const W = 720, H = 1280;
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const storeName = cfg.name  || 'La Hornada';
+  const phone     = (cfg.phone || '975 524 363').replace(/\s/g,'');
+  const storeUrl  = 'leonnnc.github.io/la-hornada';
+
+  const draw = (productImg) => {
+    // Fondo
+    ctx.fillStyle = '#3D2314';
+    ctx.fillRect(0, 0, W, H);
+
+    // Foto producto
+    const imgY = 220, imgH = 680;
+    if (productImg) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, imgY, W, imgH);
+      ctx.clip();
+      const scale = Math.max(W / productImg.width, imgH / productImg.height);
+      const sw = productImg.width * scale, sh = productImg.height * scale;
+      ctx.drawImage(productImg, (W-sw)/2, imgY+(imgH-sh)/2, sw, sh);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#6B3A2A';
+      ctx.fillRect(0, imgY, W, imgH);
+      ctx.font = '180px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.emoji, W/2, imgY+imgH/2+60);
+    }
+
+    // Gradientes
+    const gTop = ctx.createLinearGradient(0, imgY, 0, imgY+200);
+    gTop.addColorStop(0,'rgba(61,35,20,0.9)'); gTop.addColorStop(1,'rgba(61,35,20,0)');
+    ctx.fillStyle = gTop; ctx.fillRect(0, imgY, W, 200);
+    const gBot = ctx.createLinearGradient(0, imgY+imgH-200, 0, imgY+imgH);
+    gBot.addColorStop(0,'rgba(61,35,20,0)'); gBot.addColorStop(1,'rgba(61,35,20,0.95)');
+    ctx.fillStyle = gBot; ctx.fillRect(0, imgY+imgH-200, W, 200);
+
+    // "DELICIOSAS"
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#E4A84B';
+    ctx.font = 'bold 72px Georgia, serif';
+    ctx.fillText('DELICIOSAS', W/2, 100);
+
+    // Nombre producto
+    ctx.fillStyle = '#FAF6EF';
+    const name = p.name.toUpperCase();
+    let fontSize = 80;
+    ctx.font = `bold ${fontSize}px Georgia, serif`;
+    while (ctx.measureText(name).width > W-40 && fontSize > 36) { fontSize -= 4; ctx.font = `bold ${fontSize}px Georgia, serif`; }
+    ctx.fillText(name, W/2, 190);
+
+    // Sello precio
+    const bx = W-150, by = imgY+90, br = 85;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    for (let i=0;i<20;i++){
+      const a1=(i/20)*Math.PI*2, a2=((i+0.5)/20)*Math.PI*2;
+      ctx.lineTo(bx+Math.cos(a1)*br, by+Math.sin(a1)*br);
+      ctx.lineTo(bx+Math.cos(a2)*(br-14), by+Math.sin(a2)*(br-14));
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#3D2314';
+    ctx.font = 'bold 46px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText(`S/ ${Number(p.price).toFixed(2)}`, bx, by-6);
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('POR UNIDAD', bx, by+24);
+
+    // Flecha
+    const arrowY = imgY+imgH+24;
+    ctx.strokeStyle='#FFFFFF'; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(W/2,arrowY); ctx.lineTo(W/2,arrowY+52);
+    ctx.moveTo(W/2-24,arrowY+28); ctx.lineTo(W/2,arrowY+52); ctx.lineTo(W/2+24,arrowY+28);
+    ctx.stroke();
+
+    // Botón ordenar
+    const btnY = arrowY+68;
+    ctx.fillStyle = '#B84C2A';
+    campanaRoundRect(ctx, 50, btnY, W-100, 90, 45); ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 46px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText('ORDENAR AQUÍ', W/2, btnY+60);
+
+    // Delivery gratis
+    ctx.fillStyle = '#E4A84B';
+    ctx.font = 'bold 34px Georgia, serif';
+    ctx.fillText('🚚  DELIVERY GRATIS', W/2, btnY+130);
+
+    // Info contacto
+    const infoY = btnY+170;
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    campanaRoundRect(ctx, 30, infoY, W-60, 110, 14); ctx.fill();
+    ctx.fillStyle = '#FAF6EF';
+    ctx.font = 'bold 26px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`📞 WhatsApp: ${phone}`, W/2, infoY+42);
+    ctx.fillStyle = '#E4A84B';
+    ctx.font = '22px sans-serif';
+    ctx.fillText(`🌐 ${storeUrl}`, W/2, infoY+80);
+
+    // Marca
+    ctx.fillStyle = '#E4A84B';
+    ctx.font = 'bold 26px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText(`🍞 ${storeName} — Delicias Artesanales`, W/2, H-20);
+
+    // Mostrar flyer
+    const imgEl = document.getElementById('campanaFlyerImg');
+    const loadEl = document.querySelector('.campana-flyer-loading');
+    if (imgEl) { imgEl.src = canvas.toDataURL('image/png'); imgEl.style.display = 'block'; }
+    if (loadEl) loadEl.style.display = 'none';
+
+    // Actualizar botón WA para compartir imagen si es móvil
+    actualizarBtnWAConFlyer(canvas, waUrl, contacto);
+  };
+
+  if (p.img) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => draw(img);
+    img.onerror = () => draw(null);
+    img.src = p.img;
+  } else {
+    draw(null);
+  }
+}
+
+function campanaRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+/* ── Actualizar botón WA: en móvil comparte imagen, en desktop abre WA ── */
+function actualizarBtnWAConFlyer(canvas, waUrl, contacto) {
+  const btn = document.getElementById('campanaBtnWA');
+  if (!btn) return;
+
+  if (navigator.share && navigator.canShare) {
+    // Móvil: compartir imagen + texto
+    btn.removeAttribute('href');
+    btn.removeAttribute('target');
+    btn.onclick = async (e) => {
+      e.preventDefault();
+      try {
+        canvas.toBlob(async (blob) => {
+          const file = new File([blob], 'flyer-lahornada.png', { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: 'La Hornada — Flyer' });
+          } else {
+            window.open(waUrl, '_blank');
+          }
+          registrarEnviado(contacto.telefono, contacto.nombre);
+        }, 'image/png');
+      } catch(err) {
+        if (err.name !== 'AbortError') window.open(waUrl, '_blank');
+      }
+    };
+  }
+  // Desktop: el link href ya está puesto, solo descarga el flyer también
+}
+
+function buildWAMessage(p, nombre) {
+  const cfg = (() => { try { return JSON.parse(localStorage.getItem('lahornada_settings')||'{}'); } catch { return {}; } })();
+  const storeName = cfg.name  || 'La Hornada';
+  const phone     = cfg.phone || '975 524 363';
+  const storeUrl  = 'https://leonnnc.github.io/la-hornada';
+
+  let msg = `🍞 *¡Hola${nombre && nombre !== 'Cliente' ? ' ' + nombre : ''}!* 👋\n\n`;
+  msg += `Te traemos una delicia de *${storeName}*:\n\n`;
+  msg += `🌟 *${p.name}*\n`;
+  msg += `${p.desc}\n\n`;
+  msg += `💰 *Precio: S/ ${Number(p.price).toFixed(2)} / unidad*\n`;
+  msg += `🚚 Delivery gratis\n\n`;
+  msg += `👉 Visita nuestra tienda y haz tu pedido:\n`;
+  msg += `🌐 ${storeUrl}\n\n`;
+  msg += `O escríbenos directamente 😊\n`;
+  msg += `📞 ${phone}`;
+  return msg;
+}
+
+window.registrarEnviado = function(tel, nombre) {
+  campanaEnviadosLog.push({ tel, nombre });
+  campanaIndex++;
+  setTimeout(renderCampanaEnvio, 600);
+};
+
+window.saltarCliente = function() {
+  campanaIndex++;
+  renderCampanaEnvio();
+};
+
+window.campanaVolver = function() {
+  const layout = document.getElementById('campana-layout');
+  const step3  = document.getElementById('campana-step3');
+  if (layout) layout.style.display = '';
+  if (step3)  step3.style.display  = 'none';
+  campanaQueue = [];
+  campanaIndex = 0;
+  campanaEnviadosLog = [];
+};
+
+/* ── Hook showSection ── */
+const _origShowSection = window.showSection;
+window.showSection = function(name, el) {
+  _origShowSection(name, el);
+  if (name === 'campanas') initCampanas();
+};

@@ -90,5 +90,65 @@ const DEFAULT_PRODUCTS = [
     available: true,
     stock: 3,
     order: 7
+  },
+  {
+    id: 9,
+    name: "Agua Loa Piña",
+    desc: "Agua saborizada sabor piña. Refrescante y sin colorantes.",
+    price: 2.00,
+    emoji: "💧",
+    img: "img/loapiña.webp",
+    available: true,
+    stock: 20,
+    order: 8,
+    categoria: "bebida"
+  },
+  {
+    id: 10,
+    name: "Agua Loa Manzana",
+    desc: "Agua saborizada sabor manzana. Refrescante y sin colorantes.",
+    price: 2.00,
+    emoji: "💧",
+    img: "img/loamanzana.webp",
+    available: true,
+    stock: 20,
+    order: 9,
+    categoria: "bebida"
+  },
+  {
+    id: 11,
+    name: "Agua Loa Limón",
+    desc: "Agua saborizada sabor limón. Refrescante y sin colorantes.",
+    price: 2.00,
+    emoji: "💧",
+    img: "img/loalimon.webp",
+    available: true,
+    stock: 20,
+    order: 10,
+    categoria: "bebida"
+  },
+  {
+    id: 12,
+    name: "Pepsi Mini",
+    desc: "Gaseosa Pepsi 300ml. Perfecta para acompañar tu pedido.",
+    price: 2.50,
+    emoji: "🥤",
+    img: "img/Pepsi mini.webp",
+    available: true,
+    stock: 15,
+    order: 11,
+    categoria: "bebida"
+  },
+  {
+    id: 13,
+    name: "Pepsi Jumbo",
+    desc: "Gaseosa Pepsi 1.5L. Ideal para compartir.",
+    price: 5.00,
+    emoji: "🥤",
+    img: "img/pepsi jumbo.webp",
+    available: true,
+    stock: 10,
+    order: 12,
+    categoria: "bebida"
   }
 ];

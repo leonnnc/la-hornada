@@ -80,9 +80,10 @@ function renderProducts() {
   grid.innerHTML = visible.map(p => {
     const imgSrc   = resolveImg(p.img);
     const sinStock = (p.stock ?? 99) === 0;
+    const esBebida = p.categoria === 'bebida';
     return `
     <div class="product-card ${sinStock ? 'out-of-stock' : ''}">
-      <div class="product-img" onclick="openProductModal(${p.id})" style="cursor:pointer">
+      <div class="product-img ${esBebida ? 'product-img-bebida' : ''}">
         <img src="${imgSrc}" alt="${esc(p.name)}"
           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
         <div class="emoji-fallback" style="display:none">${p.emoji}</div>
@@ -267,20 +268,85 @@ let pendingTotal    = 0;
 
 /* ── ORDER: abrir checkout ── */
 window.placeOrder = async function() {
+  // Verificar si ya hay bebidas en el carrito
+  const tieneBebida = Object.keys(cart).some(id => {
+    const p = products.find(x => x.id == id);
+    return p && p.categoria === 'bebida';
+  });
+
+  // Si NO tiene bebida, mostrar modal combo
+  if (!tieneBebida) {
+    renderComboBebidas();
+    document.getElementById('comboOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  } else {
+    // Si ya tiene bebida, ir directo al checkout
+    continuarCheckout();
+  }
+};
+
+/* ── Renderizar bebidas disponibles en el combo ── */
+function renderComboBebidas() {
+  const bebidas = products.filter(p => p.categoria === 'bebida' && p.available !== false && (p.stock ?? 99) > 0);
+  const grid = document.getElementById('comboGrid');
+  if (!grid) return;
+
+  if (bebidas.length === 0) {
+    grid.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem">No hay bebidas disponibles</p>`;
+    return;
+  }
+
+  grid.innerHTML = bebidas.map(b => {
+    const imgSrc = resolveImg(b.img);
+    return `
+    <button class="combo-bebida-card" onclick="agregarBebidaCombo(${b.id})">
+      <div class="combo-bebida-img">
+        <img src="${imgSrc}" alt="${esc(b.name)}"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <span style="display:none;font-size:2rem">${b.emoji}</span>
+      </div>
+      <div class="combo-bebida-name">${esc(b.name)}</div>
+      <div class="combo-bebida-price">S/ ${Number(b.price).toFixed(2)}</div>
+      <div class="combo-bebida-btn">+ Agregar</div>
+    </button>`;
+  }).join('');
+}
+
+/* ── COMBO: agregar bebida y continuar ── */
+window.agregarBebidaCombo = function(bebidaId) {
+  const bebida = products.find(p => p.id === bebidaId);
+  if (!bebida) return;
+
+  // Agregar al carrito
+  cart[bebidaId] = (cart[bebidaId] || 0) + 1;
+  updateCartUI();
+
+  document.getElementById('comboOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  showToast(`✅ ${bebida.emoji} ${esc(bebida.name)} agregado`);
+
+  // Continuar al checkout
+  setTimeout(continuarCheckout, 400);
+};
+
+/* ── COMBO: saltar sin bebida ── */
+window.saltarCombo = function() {
+  document.getElementById('comboOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  continuarCheckout();
+};
+
+/* ── Continuar con el checkout normal ── */
+async function continuarCheckout() {
   const btn = document.querySelector('.order-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
 
-  try {
-    if (Object.keys(cart).length > 0) {
-      await fsDeductStock(cart);
-    }
-  } catch (e) {
-    console.error('Error al descontar stock:', e);
-  }
-
   pendingCart     = { ...cart };
   pendingPreorder = { ...preorder };
-  pendingTotal    = parseFloat(document.getElementById('totalAmt').textContent.replace('S/ ', '')) || 0;
+
+  // Calcular total
+  let total = parseFloat(document.getElementById('totalAmt').textContent.replace('S/ ', '')) || 0;
+  pendingTotal = total;
 
   cart     = {};
   preorder = {};
@@ -292,7 +358,7 @@ window.placeOrder = async function() {
   document.getElementById('checkoutOverlay').classList.add('open');
 
   if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar Pedido'; }
-};
+}
 
 /* ── CHECKOUT: navegación ── */
 function showCheckoutStep(step) {
@@ -317,8 +383,8 @@ window.submitOrder = async function(method) {
   if (method === 'yape') {
     nombre   = document.getElementById('yape-name').value.trim();
     telefono = document.getElementById('yape-phone').value.trim();
-    yapeDe   = document.getElementById('yape-from').value.trim();
-    if (!nombre || !telefono || !yapeDe) {
+    yapeDe   = telefono; // el número de Yape es el mismo que el teléfono
+    if (!nombre || !telefono) {
       showToast('⚠️ Por favor completa todos los campos');
       return;
     }
@@ -370,7 +436,7 @@ window.submitOrder = async function(method) {
     msg += `\n\n📲 *Yape al:* 975 524 363`;
   }
 
-  // Guardar en Firestore
+  // Guardar en Firestore y descontar stock
   let orderId = null;
   try {
     orderId = await fsSaveOrder({
@@ -383,6 +449,10 @@ window.submitOrder = async function(method) {
       fecha,
       estado: method === 'yape' ? 'pendiente_confirmacion' : 'pendiente_envio'
     });
+    // Descontar stock SOLO cuando el pedido fue guardado exitosamente
+    if (Object.keys(pendingCart).length > 0) {
+      await fsDeductStock(pendingCart);
+    }
   } catch(e) { console.error('Error guardando pedido:', e); }
 
   // Abrir WhatsApp
@@ -414,277 +484,6 @@ window.closeCheckout = function() {
   renderProducts();
 };
 
-/* ── MODAL FLYER PRODUCTO ── */
-window.openProductModal = function(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-
-  const sinStock = (p.stock ?? 99) === 0;
-  const cfg = JSON.parse(localStorage.getItem('lahornada_settings') || '{}');
-
-  // Botón agregar
-  const addBtn = document.getElementById('pmAddBtn');
-  if (sinStock) {
-    addBtn.textContent = '📅 Pedir para mañana';
-    addBtn.onclick = () => { addPreorder(id); closeProductModal(); };
-    addBtn.style.background = 'linear-gradient(135deg, #C8862A, #E4A84B)';
-  } else {
-    addBtn.textContent = '🛒 Agregar al carrito';
-    addBtn.onclick = () => { addToCart(id); closeProductModal(); };
-    addBtn.style.background = 'linear-gradient(135deg, var(--brown), var(--rust))';
-  }
-
-  document.getElementById('productModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-
-  // Generar flyer
-  generateFlyer(p, cfg);
-};
-
-window.closeProductModal = function(e) {
-  if (e && e.target !== document.getElementById('productModal') && !e.target.classList.contains('product-modal-close')) return;
-  document.getElementById('productModal').classList.remove('open');
-  document.body.style.overflow = '';
-};
-
-/* ── GENERAR FLYER CON CANVAS ── */
-function generateFlyer(p, cfg) {
-  const canvas = document.getElementById('flyerCanvas');
-  const W = 720, H = 1280;
-  canvas.width  = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-
-  const storeName = cfg.name  || 'La Hornada';
-  const phone     = (cfg.phone || '975 524 363').replace(/\s/g,'');
-  const storeUrl  = 'leonnnc.github.io/la-hornada';
-
-  const draw = (productImg) => {
-    // ── FONDO ──
-    ctx.fillStyle = '#3D2314';
-    ctx.fillRect(0, 0, W, H);
-
-    // ── FOTO DEL PRODUCTO ──
-    const imgY = 220, imgH = 680;
-    if (productImg) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, imgY, W, imgH);
-      ctx.clip();
-      const scale = Math.max(W / productImg.width, imgH / productImg.height);
-      const sw = productImg.width * scale;
-      const sh = productImg.height * scale;
-      ctx.drawImage(productImg, (W - sw) / 2, imgY + (imgH - sh) / 2, sw, sh);
-      ctx.restore();
-    } else {
-      ctx.fillStyle = '#6B3A2A';
-      ctx.fillRect(0, imgY, W, imgH);
-      ctx.font = '180px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(p.emoji, W / 2, imgY + imgH / 2 + 60);
-    }
-
-    // Gradiente superior
-    const gTop = ctx.createLinearGradient(0, imgY, 0, imgY + 200);
-    gTop.addColorStop(0, 'rgba(61,35,20,0.9)');
-    gTop.addColorStop(1, 'rgba(61,35,20,0)');
-    ctx.fillStyle = gTop;
-    ctx.fillRect(0, imgY, W, 200);
-
-    // Gradiente inferior
-    const gBot = ctx.createLinearGradient(0, imgY + imgH - 200, 0, imgY + imgH);
-    gBot.addColorStop(0, 'rgba(61,35,20,0)');
-    gBot.addColorStop(1, 'rgba(61,35,20,0.95)');
-    ctx.fillStyle = gBot;
-    ctx.fillRect(0, imgY + imgH - 200, W, 200);
-
-    // ── "DELICIOSAS" ──
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#E4A84B';
-    ctx.font = 'bold 72px Georgia, serif';
-    ctx.fillText('DELICIOSAS', W / 2, 100);
-
-    // ── NOMBRE DEL PRODUCTO — ajuste automático ──
-    ctx.fillStyle = '#FAF6EF';
-    const name = p.name.toUpperCase();
-    let fontSize = 80;
-    ctx.font = `bold ${fontSize}px Georgia, serif`;
-    while (ctx.measureText(name).width > W - 40 && fontSize > 36) {
-      fontSize -= 4;
-      ctx.font = `bold ${fontSize}px Georgia, serif`;
-    }
-    ctx.fillText(name, W / 2, 190);
-
-    // ── SELLO DE PRECIO ──
-    const bx = W - 150, by = imgY + 90, br = 85;
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    for (let i = 0; i < 20; i++) {
-      const a1 = (i / 20) * Math.PI * 2;
-      const a2 = ((i + 0.5) / 20) * Math.PI * 2;
-      ctx.lineTo(bx + Math.cos(a1) * br, by + Math.sin(a1) * br);
-      ctx.lineTo(bx + Math.cos(a2) * (br - 14), by + Math.sin(a2) * (br - 14));
-    }
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#3D2314';
-    ctx.font = 'bold 46px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`S/ ${Number(p.price).toFixed(2)}`, bx, by - 6);
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('POR UNIDAD', bx, by + 24);
-
-    // ── FLECHA ──
-    const arrowY = imgY + imgH + 24;
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(W / 2, arrowY);
-    ctx.lineTo(W / 2, arrowY + 52);
-    ctx.moveTo(W / 2 - 24, arrowY + 28);
-    ctx.lineTo(W / 2, arrowY + 52);
-    ctx.lineTo(W / 2 + 24, arrowY + 28);
-    ctx.stroke();
-
-    // ── BOTÓN ORDENAR ──
-    const btnY = arrowY + 68;
-    ctx.fillStyle = '#B84C2A';
-    roundRect(ctx, 50, btnY, W - 100, 90, 45);
-    ctx.fill();
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 46px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('ORDENAR AQUÍ', W / 2, btnY + 60);
-
-    // ── DELIVERY GRATIS ──
-    ctx.fillStyle = '#E4A84B';
-    ctx.font = 'bold 34px Georgia, serif';
-    ctx.fillText('🚚  DELIVERY GRATIS', W / 2, btnY + 130);
-
-    // ── INFO ──
-    const infoY = btnY + 170;
-    ctx.fillStyle = 'rgba(255,255,255,0.07)';
-    roundRect(ctx, 30, infoY, W - 60, 110, 14);
-    ctx.fill();
-
-    ctx.fillStyle = '#FAF6EF';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`📞 WhatsApp: ${phone}`, W / 2, infoY + 42);
-    ctx.fillStyle = '#E4A84B';
-    ctx.font = '22px sans-serif';
-    ctx.fillText(`🌐 ${storeUrl}`, W / 2, infoY + 80);
-
-    // ── MARCA ──
-    ctx.fillStyle = '#E4A84B';
-    ctx.font = 'bold 26px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`🍞 ${storeName} — Delicias Artesanales`, W / 2, H - 20);
-
-    document.getElementById('flyerPreview').src = canvas.toDataURL('image/png');
-  };
-
-  if (p.img) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload  = () => draw(img);
-    img.onerror = () => draw(null);
-    img.src = resolveImg(p.img);
-  } else {
-    draw(null);
-  }
-}
-
-// Helpers canvas
-function wrapText(ctx, text, maxWidth, fontSize) {
-  const words = text.split(' ');
-  const lines = [];
-  let line = '';
-  words.forEach(word => {
-    const test = line ? line + ' ' + word : word;
-    if (ctx.measureText(test).width > maxWidth && line) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = test;
-    }
-  });
-  if (line) lines.push(line);
-  return lines;
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-window.downloadFlyer = function() {
-  const canvas = document.getElementById('flyerCanvas');
-  const link   = document.createElement('a');
-  link.download = `flyer-lahornada.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-};
-
-window.shareWhatsApp = async function() {
-  const canvas = document.getElementById('flyerCanvas');
-
-  // Intentar Web Share API (funciona en móvil)
-  if (navigator.share && navigator.canShare) {
-    try {
-      canvas.toBlob(async (blob) => {
-        const file = new File([blob], 'flyer-lahornada.png', { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'La Hornada — Flyer',
-          });
-        } else {
-          // No soporta compartir archivos, descargar
-          fallbackDownload(canvas);
-        }
-      }, 'image/png');
-    } catch (e) {
-      // Usuario canceló o error
-      if (e.name !== 'AbortError') fallbackDownload(canvas);
-    }
-  } else {
-    // Desktop: descargar y avisar
-    fallbackDownload(canvas);
-    showToast('📥 Imagen descargada — adjúntala en WhatsApp manualmente');
-  }
-};
-
-function fallbackDownload(canvas) {
-  const link = document.createElement('a');
-  link.download = 'flyer-lahornada.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-}
-
-window.copySocialText = function() {
-  const text = document.getElementById('pmSocialText').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('btnCopy');
-    btn.textContent = '✅ ¡Copiado!';
-    btn.style.background = '#27ae60';
-    setTimeout(() => {
-      btn.textContent = '📋 Copiar texto';
-      btn.style.background = '';
-    }, 2000);
-  });
-};
 async function init() {
   applyStoreSettings();
 

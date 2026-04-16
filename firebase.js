@@ -187,10 +187,18 @@ async function fsResetProducts() {
   await fsSaveAllProducts(DEFAULT_PRODUCTS.map((p, i) => ({ ...p, order: i })));
 }
 
+/* ── Obtener todos los clientes ── */
+async function fsGetClientes() {
+  const snap = await getDocs(collection(db, 'clientes'));
+  const list = snap.docs.map(d => d.data());
+  list.sort((a, b) => (b.ultimoPedido || 0) - (a.ultimoPedido || 0));
+  return list;
+}
+
 export {
   db, fsGetProducts, fsSaveProduct, fsSaveAllProducts,
   fsDeleteProduct, fsDeductStock, fsOnProducts,
   fsInitIfEmpty, fsResetProducts, fsSaveOrder,
   fsOnOrders, fsOnArchivedOrders, fsUpdateOrderStatus,
-  fsWatchOrderStatus
+  fsWatchOrderStatus, fsGetClientes
 };

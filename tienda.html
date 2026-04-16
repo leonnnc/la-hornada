@@ -98,6 +98,25 @@
   <div class="toast" id="toast"></div>
 
   <!-- ═══════════════════════════════════════
+       MODAL COMBO BEBIDAS
+  ════════════════════════════════════════ -->
+  <div class="modal-overlay" id="comboOverlay">
+    <div class="modal combo-modal">
+      <div class="combo-icon">💧</div>
+      <h3>¿Le agregas una bebida?</h3>
+      <p>Complementa tu pedido con algo refrescante</p>
+
+      <div class="combo-grid" id="comboGrid">
+        <!-- Se renderiza dinámicamente con las bebidas disponibles -->
+      </div>
+
+      <button class="combo-btn-no" onclick="saltarCombo()">
+        No gracias, continuar sin bebida →
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
        MODAL CHECKOUT (pago + datos)
   ════════════════════════════════════════ -->
   <div class="modal-overlay" id="checkoutOverlay">
@@ -148,10 +167,6 @@
           <div class="cf-row">
             <label>Tu teléfono</label>
             <input type="tel" id="yape-phone" placeholder="Ej: 987 654 321">
-          </div>
-          <div class="cf-row">
-            <label>Número desde el que yapeas</label>
-            <input type="tel" id="yape-from" placeholder="Número Yape">
           </div>
         </div>
         <div class="checkout-footer">
@@ -224,21 +239,6 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       MODAL FLYER PRODUCTO
-  ════════════════════════════════════════ -->
-  <div class="modal-overlay" id="productModal" onclick="closeProductModal(event)">
-    <div class="product-modal-box">
-      <button class="product-modal-close" onclick="closeProductModal()">✕</button>
-      <canvas id="flyerCanvas" style="display:none"></canvas>
-      <img id="flyerPreview" class="flyer-preview" alt="Flyer">
-      <div class="flyer-btns">
-        <button class="btn-download" onclick="downloadFlyer()">⬇️ Descargar flyer</button>
-        <button class="btn-whatsapp-share" onclick="shareWhatsApp()">💬 Enviar por WhatsApp</button>
-        <button class="product-modal-add" id="pmAddBtn">🛒 Agregar al carrito</button>
-      </div>
-    </div>
-  </div>
   <footer>
     <strong>La Hornada</strong> — Delicias Artesanales<br>
     📍 Lima, Perú &nbsp;|&nbsp; 📞 +51 987 654 321 &nbsp;|&nbsp; 🕐 Lun–Dom 8am–8pm
