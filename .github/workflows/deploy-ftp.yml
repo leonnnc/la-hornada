@@ -12,12 +12,14 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Subir archivos por FTP a GoDaddy
+      - name: Subir archivos por FTPS a GoDaddy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
           server-dir: /
           exclude: |
             **/.git*
