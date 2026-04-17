@@ -235,6 +235,7 @@ window.openCart = function() {
 window.closeCart = function() {
   document.getElementById('cartOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  document.body.style.overflowY = 'auto';
 };
 window.handleOverlayClick = function(e) {
   if (e.target === document.getElementById('cartOverlay')) window.closeCart();
@@ -333,6 +334,7 @@ window.agregarBebidaCombo = function(bebidaId) {
 window.saltarCombo = function() {
   document.getElementById('comboOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  document.body.style.overflowY = 'auto';
   continuarCheckout();
 };
 
@@ -481,6 +483,8 @@ window.submitOrder = async function(method) {
 window.closeCheckout = function() {
   document.getElementById('checkoutOverlay').classList.remove('open');
   pendingCart = {}; pendingPreorder = {}; pendingTotal = 0;
+  document.body.style.overflow = '';
+  document.body.style.overflowY = 'auto';
   renderProducts();
 };
 

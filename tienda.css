@@ -27,6 +27,8 @@ body {
   background: var(--cream);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── HEADER ── */
