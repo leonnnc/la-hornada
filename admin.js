@@ -1079,9 +1079,164 @@ function generarFlyerCampana(p, waUrl, contacto) {
   canvas.width  = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const storeName = cfg.name  || 'La Hornada';
-  const phone     = (cfg.phone || '975 524 363').replace(/\s/g,'');
-  const storeUrl  = 'leonnnc.github.io/la-hornada';
+  const phone    = (cfg.phone || '975 524 363').replace(/\s/g,'');
+  const storeUrl = 'https://lahornada.aplicatodos.com/tienda.html';
+
+  const draw = (productImg) => {
+    // ── FONDO BLANCO ──
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── FOTO PRODUCTO (mitad superior) ──
+    const imgH = 560;
+    if (productImg) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, imgH);
+      ctx.clip();
+      const scale = Math.max(W / productImg.width, imgH / productImg.height);
+      const sw = productImg.width * scale, sh = productImg.height * scale;
+      ctx.drawImage(productImg, (W-sw)/2, (imgH-sh)/2, sw, sh);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#F5ECD7';
+      ctx.fillRect(0, 0, W, imgH);
+      ctx.font = '200px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.emoji, W/2, imgH/2 + 70);
+    }
+
+    // ── ONDA AMARILLA (separador) ──
+    const waveY = imgH - 60;
+    ctx.fillStyle = '#E4A84B';
+    ctx.beginPath();
+    ctx.moveTo(0, waveY + 60);
+    ctx.bezierCurveTo(W*0.25, waveY - 40, W*0.75, waveY + 100, W, waveY + 20);
+    ctx.lineTo(W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // ── FONDO AMARILLO INFERIOR ──
+    ctx.fillStyle = '#E4A84B';
+    ctx.fillRect(0, waveY + 60, W, H - waveY - 60);
+
+    // ── PATRÓN TEXTURA (puntos) ──
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    for (let x = 20; x < W; x += 40) {
+      for (let y = waveY + 80; y < H - 60; y += 40) {
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // ── NOMBRE PRODUCTO (grande, blanco) ──
+    const nameY = waveY + 120;
+    const words = p.name.toUpperCase().split(' ');
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 8;
+
+    // Línea 1
+    let fontSize1 = 130;
+    ctx.font = `900 ${fontSize1}px Impact, Arial Black, sans-serif`;
+    const line1 = words.slice(0, Math.ceil(words.length / 2)).join(' ');
+    while (ctx.measureText(line1).width > W - 40 && fontSize1 > 60) {
+      fontSize1 -= 4;
+      ctx.font = `900 ${fontSize1}px Impact, Arial Black, sans-serif`;
+    }
+    ctx.strokeText(line1, W/2, nameY);
+    ctx.fillText(line1, W/2, nameY);
+
+    // Línea 2
+    if (words.length > 1) {
+      const line2 = words.slice(Math.ceil(words.length / 2)).join(' ');
+      let fontSize2 = 110;
+      ctx.font = `900 ${fontSize2}px Impact, Arial Black, sans-serif`;
+      ctx.fillStyle = '#2A1810';
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      while (ctx.measureText(line2).width > W - 40 && fontSize2 > 50) {
+        fontSize2 -= 4;
+        ctx.font = `900 ${fontSize2}px Impact, Arial Black, sans-serif`;
+      }
+      ctx.strokeText(line2, W/2, nameY + fontSize1 + 10);
+      ctx.fillText(line2, W/2, nameY + fontSize1 + 10);
+    }
+
+    // ── "DELICIOSAS" ──
+    const subY = nameY + fontSize1 + 130;
+    ctx.fillStyle = '#2A1810';
+    ctx.font = 'bold 52px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('DELICIOSAS', W/2, subY);
+
+    // ── SELLO PRECIO (círculo blanco) ──
+    const cx = W/2, cy = subY + 100, cr = 90;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#2A1810';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.fillStyle = '#2A1810';
+    ctx.font = 'bold 52px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`S/${Number(p.price).toFixed(2)}`, cx, cy + 10);
+
+    // ── "UND" ──
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(cx - 60, cy + cr - 10, 120, 36);
+    ctx.fillStyle = '#2A1810';
+    ctx.font = 'bold 26px Arial, sans-serif';
+    ctx.fillText('UND', cx, cy + cr + 18);
+
+    // ── "¡LLEVAMOS A DOMICILIO!" ──
+    const domY = cy + cr + 80;
+    ctx.fillStyle = '#2A1810';
+    ctx.font = 'bold 54px Impact, Arial Black, sans-serif';
+    ctx.fillText('¡LLEVAMOS A DOM!', W/2, domY);
+
+    // ── TELÉFONO ──
+    ctx.fillStyle = '#2A1810';
+    ctx.font = '36px Arial, sans-serif';
+    ctx.fillText(`pedidos a ${phone}`, W/2, domY + 56);
+
+    // ── URL ──
+    ctx.fillStyle = '#2A1810';
+    ctx.font = 'bold 28px Arial, sans-serif';
+    // Subrayado
+    const urlText = storeUrl;
+    const urlW = ctx.measureText(urlText).width;
+    ctx.fillText(urlText, W/2, H - 30);
+    ctx.fillRect(W/2 - urlW/2, H - 18, urlW, 3);
+
+    // Mostrar flyer
+    const imgEl = document.getElementById('campanaFlyerImg');
+    const loadEl = document.querySelector('.campana-flyer-loading');
+    if (imgEl) { imgEl.src = canvas.toDataURL('image/png'); imgEl.style.display = 'block'; }
+    if (loadEl) loadEl.style.display = 'none';
+
+    actualizarBtnWAConFlyer(canvas, waUrl, contacto);
+  };
+
+  if (campanaFotoCustom) {
+    const img = new Image();
+    img.onload = () => draw(img);
+    img.src = campanaFotoCustom;
+  } else if (p.img) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => draw(img);
+    img.onerror = () => draw(null);
+    img.src = p.img;
+  } else {
+    draw(null);
+  }
+}
 
   const draw = (productImg) => {
     // Fondo
