@@ -218,11 +218,51 @@
               </div>
             </div>
 
-            <!-- COLUMNA DERECHA: lista de números + envío -->
+            <!-- COLUMNA DERECHA: edición + lista de números + envío -->
             <div class="campana-right">
-              <div class="campana-bloque campana-bloque-sticky">
+
+              <!-- Bloque: personalizar mensaje -->
+              <div class="campana-bloque">
                 <div class="campana-bloque-title">
                   <span class="campana-step-num">3</span>
+                  Personaliza el mensaje
+                </div>
+                <div class="campana-msg-label">✏️ Texto que recibirán tus clientes</div>
+                <textarea id="campanaMsgTemplate" class="campana-msg-edit"
+                  placeholder="Escribe aquí el mensaje personalizado..."
+                  oninput="campanaMsgPersonalizado = this.value"></textarea>
+                <div class="campana-msg-hint">
+                  💡 Usa <code>{nombre}</code> para incluir el nombre del cliente
+                </div>
+              </div>
+
+              <!-- Bloque: foto personalizada del flyer -->
+              <div class="campana-bloque">
+                <div class="campana-bloque-title">
+                  <span class="campana-step-num">4</span>
+                  Foto del flyer
+                </div>
+                <div class="campana-foto-preview" id="campanaFotoPreview">
+                  <div class="campana-foto-placeholder">📷 Se usará la foto del producto</div>
+                  <img id="campanaFotoImg" style="display:none" alt="Foto personalizada">
+                </div>
+                <div class="campana-foto-btns">
+                  <label class="campana-btn-foto" for="campanaFotoInput">
+                    📁 Cambiar foto
+                    <input type="file" id="campanaFotoInput" accept="image/*"
+                      onchange="cambiarFotoCampana(event)" style="display:none">
+                  </label>
+                  <button class="campana-btn-foto-reset" id="campanaFotoReset"
+                    onclick="resetFotoCampana()" style="display:none">
+                    ✕ Usar foto del producto
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bloque: lista de números + envío -->
+              <div class="campana-bloque campana-bloque-sticky">
+                <div class="campana-bloque-title">
+                  <span class="campana-step-num">5</span>
                   Lista de envío
                   <span class="campana-clientes-count" id="campanaNumerosCount">0</span>
                 </div>

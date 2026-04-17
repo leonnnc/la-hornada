@@ -2112,3 +2112,84 @@ body {
 .campana-msg-edit:focus {
   border-color: var(--gold);
 }
+
+/* ── Sección foto personalizada campaña ── */
+.campana-foto-preview {
+  width: 100%;
+  height: 120px;
+  background: var(--bg);
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.campana-foto-placeholder {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.campana-foto-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.campana-foto-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.campana-btn-foto {
+  background: rgba(228,168,75,0.12);
+  border: 1px solid rgba(228,168,75,0.4);
+  color: var(--gold);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.campana-btn-foto:hover { background: rgba(228,168,75,0.25); }
+
+.campana-btn-foto-reset {
+  background: rgba(231,76,60,0.1);
+  border: 1px solid rgba(231,76,60,0.3);
+  color: var(--red);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: none;
+}
+
+.campana-btn-foto-reset:hover { background: rgba(231,76,60,0.2); }
+
+.campana-msg-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.campana-msg-hint code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--gold);
+  font-size: 0.72rem;
+}

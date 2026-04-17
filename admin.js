@@ -794,6 +794,8 @@ let campanaNumerosManual = [];
 let campanaQueue         = [];
 let campanaIndex         = 0;
 let campanaEnviadosLog   = [];
+let campanaMsgPersonalizado = ''; // mensaje personalizado por el admin
+let campanaFotoCustom    = null;  // imagen personalizada (data URL)
 
 async function initCampanas() {
   campanaProducto      = null;
@@ -847,6 +849,17 @@ window.seleccionarProductoCampana = function(id) {
   renderCampanaProductos();
   actualizarFooterCampana();
   showToast(`✅ ${campanaProducto.name} seleccionado`);
+
+  // Generar mensaje template con el producto seleccionado
+  const msgTemplate = buildWAMessageTemplate(campanaProducto);
+  const textarea = document.getElementById('campanaMsgTemplate');
+  if (textarea) {
+    textarea.value = msgTemplate;
+    campanaMsgPersonalizado = msgTemplate;
+  }
+
+  // Resetear foto personalizada
+  resetFotoCampana();
 };
 
 window.agregarNumeroCampana = function() {
@@ -1164,7 +1177,12 @@ function generarFlyerCampana(p, waUrl, contacto) {
     actualizarBtnWAConFlyer(canvas, waUrl, contacto);
   };
 
-  if (p.img) {
+  if (campanaFotoCustom) {
+    // Usar foto personalizada
+    const img = new Image();
+    img.onload = () => draw(img);
+    img.src = campanaFotoCustom;
+  } else if (p.img) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload  = () => draw(img);
@@ -1219,6 +1237,11 @@ function buildWAMessage(p, nombre) {
   const phone     = cfg.phone || '975 524 363';
   const storeUrl  = 'https://leonnnc.github.io/la-hornada';
 
+  // Si hay mensaje personalizado, reemplazar {nombre}
+  if (campanaMsgPersonalizado) {
+    return campanaMsgPersonalizado.replace(/\{nombre\}/g, nombre && nombre !== 'Cliente' ? nombre : '');
+  }
+
   let msg = `🍞 *¡Hola${nombre && nombre !== 'Cliente' ? ' ' + nombre : ''}!* 👋\n\n`;
   msg += `Te traemos una delicia de *${storeName}*:\n\n`;
   msg += `🌟 *${p.name}*\n`;
@@ -1231,6 +1254,57 @@ function buildWAMessage(p, nombre) {
   msg += `📞 ${phone}`;
   return msg;
 }
+
+/* ── Mensaje template para el textarea ── */
+function buildWAMessageTemplate(p) {
+  const cfg = (() => { try { return JSON.parse(localStorage.getItem('lahornada_settings')||'{}'); } catch { return {}; } })();
+  const storeName = cfg.name  || 'La Hornada';
+  const phone     = cfg.phone || '975 524 363';
+  const storeUrl  = 'https://leonnnc.github.io/la-hornada';
+
+  let msg = `🍞 *¡Hola {nombre}!* 👋\n\n`;
+  msg += `Te traemos una delicia de *${storeName}*:\n\n`;
+  msg += `🌟 *${p.name}*\n`;
+  msg += `${p.desc}\n\n`;
+  msg += `💰 *Precio: S/ ${Number(p.price).toFixed(2)} / unidad*\n`;
+  msg += `🚚 Delivery gratis\n\n`;
+  msg += `👉 Visita nuestra tienda y haz tu pedido:\n`;
+  msg += `🌐 ${storeUrl}\n\n`;
+  msg += `O escríbenos directamente 😊\n`;
+  msg += `📞 ${phone}`;
+  return msg;
+}
+
+/* ── Cambiar foto personalizada ── */
+window.cambiarFotoCampana = function(event) {
+  const file = event.target.files[0];
+  if (!file || !file.type.startsWith('image/')) { showToast('⚠️ Solo imágenes'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    campanaFotoCustom = e.target.result;
+    const img = document.getElementById('campanaFotoImg');
+    const placeholder = document.querySelector('.campana-foto-placeholder');
+    const resetBtn = document.getElementById('campanaFotoReset');
+    if (img) { img.src = campanaFotoCustom; img.style.display = 'block'; }
+    if (placeholder) placeholder.style.display = 'none';
+    if (resetBtn) resetBtn.style.display = 'inline-flex';
+    showToast('📷 Foto personalizada cargada');
+  };
+  reader.readAsDataURL(file);
+};
+
+/* ── Resetear foto a la del producto ── */
+window.resetFotoCampana = function() {
+  campanaFotoCustom = null;
+  const img = document.getElementById('campanaFotoImg');
+  const placeholder = document.querySelector('.campana-foto-placeholder');
+  const resetBtn = document.getElementById('campanaFotoReset');
+  const input = document.getElementById('campanaFotoInput');
+  if (img) { img.src = ''; img.style.display = 'none'; }
+  if (placeholder) placeholder.style.display = 'flex';
+  if (resetBtn) resetBtn.style.display = 'none';
+  if (input) input.value = '';
+};
 
 window.registrarEnviado = function(tel, nombre) {
   campanaEnviadosLog.push({ tel, nombre });
