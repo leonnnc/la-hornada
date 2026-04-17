@@ -2,7 +2,7 @@
    LA HORNADA — Service Worker
    ============================================= */
 
-const CACHE_NAME = 'lahornada-admin-v1';
+const CACHE_NAME = 'lahornada-admin-v2';
 const ASSETS = [
   '/admin.html',
   '/admin.css',
