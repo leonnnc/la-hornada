@@ -120,6 +120,7 @@ window.doLogin = function() {
     document.getElementById('adminUI').style.display     = 'block';
     loadSettings();
     initAdmin();
+    initPWA();
   } else {
     // Fallo — incrementar intentos
     const state = getLoginState();
@@ -161,6 +162,7 @@ async function initAdmin() {
     allOrders = orders;
     renderOrders();
     updatePendingBadge();
+    monitorearPedidosYape(orders);
   });
   // Escuchar pedidos archivados
   fsOnArchivedOrders(orders => {
@@ -1344,3 +1346,113 @@ window.showSection = function(name, el) {
   _origShowSection(name, el);
   if (name === 'campanas') initCampanas();
 };
+
+/* ═══════════════════════════════════════
+   PWA + NOTIFICACIONES PUSH
+═══════════════════════════════════════ */
+
+/* ── Registrar Service Worker ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      await navigator.serviceWorker.register('/sw.js');
+    } catch(e) {
+      console.log('SW no registrado:', e);
+    }
+  });
+
+  // Escuchar mensajes del SW (aprobar desde notificación)
+  navigator.serviceWorker.addEventListener('message', async e => {
+    if (e.data?.type === 'APROBAR_YAPE') {
+      await fsUpdateOrderStatus(e.data.orderId, 'pagado');
+      showToast('✅ Pago Yape aprobado');
+    }
+  });
+}
+
+/* ── Mostrar botón de notificaciones al loguearse ── */
+function initPWA() {
+  const btn = document.getElementById('btnNotif');
+  if (!btn) return;
+  if (!('Notification' in window)) return;
+
+  if (Notification.permission === 'granted') {
+    btn.style.display = 'none'; // ya está activo
+  } else if (Notification.permission !== 'denied') {
+    btn.style.display = 'flex';
+  }
+
+  // Verificar URL params para aprobar pedido desde notificación
+  const params = new URLSearchParams(window.location.search);
+  const aprobarId = params.get('aprobar');
+  if (aprobarId) {
+    setTimeout(async () => {
+      await fsUpdateOrderStatus(aprobarId, 'pagado');
+      showToast('✅ Pago Yape aprobado desde notificación');
+    }, 2000);
+  }
+}
+
+/* ── Solicitar permiso de notificaciones ── */
+window.solicitarNotificaciones = async function() {
+  const perm = await Notification.requestPermission();
+  const btn  = document.getElementById('btnNotif');
+  if (perm === 'granted') {
+    btn.style.display = 'none';
+    showToast('🔔 Notificaciones activadas');
+    // Enviar notificación de prueba
+    new Notification('🍞 La Hornada Admin', {
+      body: '✅ Notificaciones activadas correctamente',
+      icon: '/img/icon-192.png'
+    });
+  } else {
+    showToast('⚠️ Permiso denegado');
+  }
+};
+
+/* ── Enviar notificación push cuando llega pedido Yape ── */
+function notificarPedidoYape(orden) {
+  if (Notification.permission !== 'granted') return;
+
+  const title = `💳 Yape pendiente — #${orden.codigoPedido || '????'}`;
+  const body  = `${orden.nombre} yapea S/ ${Number(orden.total || 0).toFixed(2)}\nTel: ${orden.telefono}`;
+
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, {
+        body,
+        icon: '/img/icon-192.png',
+        badge: '/img/icon-192.png',
+        tag: `yape-${orden.id}`,
+        data: { orderId: orden.id },
+        actions: [
+          { action: 'aprobar', title: '✅ Aprobar pago' },
+          { action: 'ver',     title: '👁 Ver pedido' }
+        ],
+        requireInteraction: true,
+        vibrate: [300, 100, 300, 100, 300]
+      });
+    });
+  } else {
+    // Fallback: notificación simple
+    const n = new Notification(title, { body, icon: '/img/icon-192.png' });
+    n.onclick = () => { window.focus(); n.close(); };
+  }
+}
+
+/* ── Hook: detectar nuevos pedidos Yape y notificar ── */
+let pedidosYapeConocidos = new Set();
+
+function monitorearPedidosYape(orders) {
+  orders
+    .filter(o => o.estado === 'pendiente_confirmacion')
+    .forEach(o => {
+      if (!pedidosYapeConocidos.has(o.id)) {
+        pedidosYapeConocidos.add(o.id);
+        // No notificar en la carga inicial
+        if (pedidosYapeConocidos.size > 0 && document.visibilityState === 'hidden') {
+          notificarPedidoYape(o);
+        }
+      }
+    });
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Icons</title></head>
+<body>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+function drawIcon(canvas) {
+  const ctx = canvas.getContext('2d');
+  const s = canvas.width;
+  // Fondo marrón redondeado
+  ctx.fillStyle = '#3D2314';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, s, s, s * 0.2);
+  ctx.fill();
+  // Emoji pan
+  ctx.font = `${s * 0.65}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🍞', s / 2, s / 2 + s * 0.04);
+  return canvas.toDataURL('image/png');
+}
+
+window.onload = () => {
+  const url192 = drawIcon(document.getElementById('c192'));
+  const url512 = drawIcon(document.getElementById('c512'));
+
+  // Descargar 192
+  const a192 = document.createElement('a');
+  a192.href = url192; a192.download = 'icon-192.png'; a192.click();
+
+  setTimeout(() => {
+    const a512 = document.createElement('a');
+    a512.href = url512; a512.download = 'icon-512.png'; a512.click();
+  }, 500);
+};
+</script>
+</body>
+</html>
