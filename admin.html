@@ -456,6 +456,33 @@
   <!-- ═══════════════════════════════════════
        TOAST
   ════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════
+       BARRA NAVEGACIÓN MÓVIL
+  ════════════════════════════════════════ -->
+  <nav class="mobile-nav" id="mobileNav">
+    <button class="mobile-nav-item active" onclick="showSection('products', this)" data-section="products">
+      <span class="mobile-nav-icon">🍽️</span>
+      <span class="mobile-nav-label">Productos</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showSection('orders', this)" data-section="orders">
+      <span class="mobile-nav-icon">📋</span>
+      <span class="mobile-nav-label">Pedidos</span>
+      <span class="mobile-nav-badge" id="mobilePendingBadge"></span>
+    </button>
+    <button class="mobile-nav-item" onclick="showSection('campanas', this)" data-section="campanas">
+      <span class="mobile-nav-icon">📣</span>
+      <span class="mobile-nav-label">Campañas</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showSection('archive', this)" data-section="archive">
+      <span class="mobile-nav-icon">📁</span>
+      <span class="mobile-nav-label">Archivo</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showSection('settings', this)" data-section="settings">
+      <span class="mobile-nav-icon">⚙️</span>
+      <span class="mobile-nav-label">Config</span>
+    </button>
+  </nav>
+
   <div class="toast" id="toast"></div>
 
   <script src="products.js"></script>

@@ -177,8 +177,13 @@ async function initAdmin() {
 window.showSection = function(name, el) {
   document.querySelectorAll('[id^="section-"]').forEach(s => s.style.display = 'none');
   document.getElementById('section-' + name).style.display = 'block';
+  // Sidebar desktop
   document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
   if (el) el.classList.add('active');
+  // Nav móvil
+  document.querySelectorAll('.mobile-nav-item').forEach(s => s.classList.remove('active'));
+  const mobileBtn = document.querySelector(`.mobile-nav-item[data-section="${name}"]`);
+  if (mobileBtn) mobileBtn.classList.add('active');
 };
 
 /* ═══════════════════════════════════════
@@ -522,10 +527,17 @@ function updatePendingBadge() {
   const pending = allOrders.filter(o =>
     o.estado === 'pendiente_confirmacion' || o.estado === 'pendiente_envio'
   ).length;
+  // Badge sidebar desktop
   const badge = document.getElementById('pendingBadge');
   if (badge) {
     badge.textContent = pending > 0 ? pending : '';
     badge.style.display = pending > 0 ? 'inline-flex' : 'none';
+  }
+  // Badge nav móvil
+  const mobileBadge = document.getElementById('mobilePendingBadge');
+  if (mobileBadge) {
+    mobileBadge.textContent = pending > 0 ? pending : '';
+    mobileBadge.style.display = pending > 0 ? 'flex' : 'none';
   }
 }
 
