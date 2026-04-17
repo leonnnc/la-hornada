@@ -2081,3 +2081,34 @@ body {
 .campana-msg-preview strong {
   color: var(--text);
 }
+
+/* ── Mensaje editable campaña ── */
+.campana-msg-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+.campana-msg-edit {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.campana-msg-edit:focus {
+  border-color: var(--gold);
+}

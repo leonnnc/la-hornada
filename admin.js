@@ -1013,19 +1013,20 @@ function renderCampanaEnvio() {
           <div class="campana-actual-num">Contacto ${campanaIndex + 1} de ${total}</div>
           <div class="campana-actual-nombre">👤 ${esc(c.nombre)}</div>
           <div class="campana-actual-tel">📞 ${esc(c.telefono)}</div>
-          <div class="campana-msg-preview">${waMsg.replace(/\n/g, '<br>').replace(/\*(.*?)\*/g, '<strong>$1</strong>')}</div>
+          <div class="campana-msg-label">✏️ Edita el mensaje antes de enviar:</div>
+          <textarea id="campanaMsgEdit" class="campana-msg-edit">${waMsg}</textarea>
         </div>
       </div>`;
 
     btnsEl.innerHTML = `
-      <a class="campana-btn-wa" id="campanaBtnWA" href="${waUrl}" target="_blank"
-        onclick="registrarEnviado('${c.telefono}','${esc(c.nombre)}')">
+      <a class="campana-btn-wa" id="campanaBtnWA" href="${`https://wa.me/51${tel}?text=${encodeURIComponent(waMsg)}`}" target="_blank"
+        onclick="enviarConMsgEditado(event, '${c.telefono}','${esc(c.nombre)}')">
         💬 Abrir WhatsApp y enviar
       </a>
       <button class="campana-btn-skip" onclick="saltarCliente()">⏭ Saltar</button>`;
 
-    // Generar flyer en canvas y actualizar el link de WA con imagen
-    generarFlyerCampana(campanaProducto, waUrl, c);
+    // Generar flyer
+    generarFlyerCampana(campanaProducto, null, c);
   }
 
   if (campanaEnviadosLog.length > 0) {
@@ -1235,6 +1236,17 @@ window.registrarEnviado = function(tel, nombre) {
   campanaEnviadosLog.push({ tel, nombre });
   campanaIndex++;
   setTimeout(renderCampanaEnvio, 600);
+};
+
+/* ── Enviar con mensaje editado ── */
+window.enviarConMsgEditado = function(e, tel, nombre) {
+  e.preventDefault();
+  const textarea = document.getElementById('campanaMsgEdit');
+  const msg = textarea ? textarea.value : buildWAMessage(campanaProducto, nombre);
+  const telLimpio = tel.replace(/\D/g, '');
+  const url = `https://wa.me/51${telLimpio}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  registrarEnviado(tel, nombre);
 };
 
 window.saltarCliente = function() {
